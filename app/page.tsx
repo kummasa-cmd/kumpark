@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, BookOpen, Users, BookMarked } from "lucide-react";
+import BannerCarousel from "@/components/main/BannerCarousel";
 
 export const metadata: Metadata = {
   title: "검파크 | 기록이 모여 브랜드가 되는 공간",
@@ -53,8 +55,12 @@ export default function HomePage() {
             <span className="text-brand-green">브랜드가 됩니다</span>
           </h1>
           <p className="text-lg sm:text-xl text-brand-muted max-w-2xl mx-auto mb-10 leading-relaxed">
-            홍성호 작가입니다. 11권의 전자책을 썼고, 60권 이상의 전자책 출간을 코칭했습니다.
+            베스트셀러 루틴의 설계 홍성호 작가입니다. 
+	    <br className="hidden sm:block" />
+	    11권의 전자책을 썼고, 60권 이상의 전자책 출간을 코칭했습니다.
             <br className="hidden sm:block" />
+	    1대 1 맞춤형 종이책 코칭도 진행 중입니다.
+	    <br className="hidden sm:block" />
             당신의 작가 꿈을 이룰 수 있도록 함께하겠습니다.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -74,25 +80,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="bg-gray-50 py-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-3 gap-6 text-center">
-            <div>
-              <p className="text-3xl sm:text-4xl font-bold text-brand-green">11권</p>
-              <p className="text-sm text-brand-muted mt-1">직접 쓴 전자책</p>
-            </div>
-            <div>
-              <p className="text-3xl sm:text-4xl font-bold text-brand-green">60+</p>
-              <p className="text-sm text-brand-muted mt-1">코칭한 전자책</p>
-            </div>
-            <div>
-              <p className="text-3xl sm:text-4xl font-bold text-brand-green">1권</p>
-              <p className="text-sm text-brand-muted mt-1">베스트셀러 종이책</p>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Banner Carousel */}
+      <BannerCarousel />
 
       {/* Featured Products */}
       <section className="py-20 bg-white">
@@ -152,8 +141,13 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="flex-1 flex justify-center">
-            <div className="w-64 h-64 bg-green-50 rounded-2xl flex items-center justify-center text-brand-muted text-sm">
-              프로필 사진 준비중
+            <div className="w-64 h-64 relative rounded-2xl overflow-hidden">
+              <Image
+                src="/images/profile_img2.png"
+                alt="홍성호 프로필 사진"
+                fill
+                className="object-cover"
+              />
             </div>
           </div>
         </div>

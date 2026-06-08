@@ -1,0 +1,79 @@
+"use client";
+
+import Image from "next/image";
+import { useEffect, useState } from "react";
+
+const banners = [
+  { src: "/images/my_banner1.png", alt: "검파크 배너 1", label: "11권의 전자책 출간", position: "top-left" },
+  { src: "/images/my_banner2.jpg", alt: "검파크 배너 2", label: "60+ 전자책 코칭", position: "center" },
+  { src: "/images/main_banner3.png", alt: "검파크 배너 3", label: null, position: null },
+];
+
+export default function BannerCarousel() {
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % banners.length);
+    }, 10000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <section className="bg-white">
+      {/* Slide track */}
+      <div className="overflow-hidden w-full">
+        <div
+          className="flex transition-transform duration-700 ease-in-out"
+          style={{ transform: `translateX(-${current * 100}%)` }}
+        >
+          {banners.map((banner, idx) => (
+            <div key={idx} className="w-full flex-shrink-0">
+              <div className="relative mx-auto md:max-w-[65%]">
+                <Image
+                  src={banner.src}
+                  alt={banner.alt}
+                  width={0}
+                  height={0}
+                  sizes="(max-width: 768px) 100vw, 65vw"
+                  style={{ width: "100%", height: "auto" }}
+                  priority={idx === 0}
+                />
+                {banner.label && banner.position === "top-left" && (
+                  <div className="absolute" style={{ top: "50px", left: "50px" }}>
+                    <span className="font-bold text-white px-4 py-2 rounded" style={{ fontSize: "50px", backgroundColor: "#0B7903" }}>
+                      {banner.label}
+                    </span>
+                  </div>
+                )}
+                {banner.label && banner.position === "center" && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="font-bold text-white px-4 py-2 rounded" style={{ fontSize: "50px", backgroundColor: "#0B7903" }}>
+                      {banner.label}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Dot indicators */}
+      <div className="flex justify-center items-center gap-2 py-4">
+        {banners.map((_, idx) => (
+          <button
+            key={idx}
+            onClick={() => setCurrent(idx)}
+            aria-label={`배너 ${idx + 1}로 이동`}
+            className={`rounded-full transition-all duration-300 ${
+              idx === current
+                ? "w-6 h-2 bg-brand-green"
+                : "w-2 h-2 bg-gray-300 hover:bg-gray-400"
+            }`}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}

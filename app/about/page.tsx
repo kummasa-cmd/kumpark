@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -29,8 +30,14 @@ export default function AboutPage() {
 
         {/* Profile */}
         <section className="mb-16 flex flex-col sm:flex-row gap-10 items-center sm:items-start">
-          <div className="w-40 h-40 flex-shrink-0 bg-green-50 rounded-2xl flex items-center justify-center text-brand-muted text-xs">
-            프로필 사진
+          <div className="w-40 h-40 flex-shrink-0 relative rounded-2xl overflow-hidden">
+            <Image
+              src="/images/profile_img2.png"
+              alt="홍성호 프로필 사진"
+              fill
+              className="object-cover"
+              priority
+            />
           </div>
           <div>
             <p className="text-xs font-semibold text-brand-green uppercase tracking-widest mb-2">검마사</p>

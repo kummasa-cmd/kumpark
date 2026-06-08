@@ -40,14 +40,14 @@ export default function BannerCarousel() {
                   priority={idx === 0}
                 />
                 {banner.label && banner.position === "top-left" && (
-                  <div className="absolute" style={{ top: "50px", left: "50px" }}>
+                  <div className="absolute hidden md:block" style={{ top: "50px", left: "50px" }}>
                     <span className="font-bold text-white px-4 py-2 rounded" style={{ fontSize: "50px", backgroundColor: "#0B7903" }}>
                       {banner.label}
                     </span>
                   </div>
                 )}
                 {banner.label && banner.position === "center" && (
-                  <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="absolute inset-0 items-center justify-center hidden md:flex">
                     <span className="font-bold text-white px-4 py-2 rounded" style={{ fontSize: "50px", backgroundColor: "#0B7903" }}>
                       {banner.label}
                     </span>

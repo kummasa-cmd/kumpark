@@ -4,7 +4,12 @@ import { usePathname } from "next/navigation";
 import Header from "./Header";
 import Footer from "./Footer";
 
-export default function ConditionalShell({ children }: { children: React.ReactNode }) {
+interface ConditionalShellProps {
+  children: React.ReactNode;
+  memberName?: string | null;
+}
+
+export default function ConditionalShell({ children, memberName }: ConditionalShellProps) {
   const pathname = usePathname();
 
   if (pathname.startsWith("/admin")) {
@@ -13,7 +18,7 @@ export default function ConditionalShell({ children }: { children: React.ReactNo
 
   return (
     <>
-      <Header />
+      <Header memberName={memberName} />
       <main className="flex-1">{children}</main>
       <Footer />
     </>

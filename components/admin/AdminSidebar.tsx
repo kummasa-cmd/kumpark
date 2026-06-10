@@ -18,6 +18,7 @@ import {
 interface AdminSidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  role: string;
 }
 
 type MenuItem = {
@@ -53,7 +54,10 @@ const menuConfig: MenuItem[] = [
     id: "consultations",
     label: "상담관리",
     icon: MessageSquare,
-    children: [{ label: "상담목록", href: "/admin/consultations" }],
+    children: [
+      { label: "상담목록", href: "/admin/consultations" },
+      { label: "1대1 문의", href: "/admin/inquiries" },
+    ],
   },
   {
     id: "stats",
@@ -77,12 +81,13 @@ const menuConfig: MenuItem[] = [
   },
 ];
 
-export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
+export default function AdminSidebar({ isOpen, onClose, role }: AdminSidebarProps) {
   const pathname = usePathname();
+  const visibleMenu = menuConfig.filter((item) => !(item.id === "site" && role !== "super"));
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
-    for (const item of menuConfig) {
+    for (const item of visibleMenu) {
       if (item.children) {
         initial[item.id] = item.children.some((c) => pathname.startsWith(c.href));
       }
@@ -116,7 +121,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-3">
-        {menuConfig.map((item) => {
+        {visibleMenu.map((item) => {
           const Icon = item.icon;
 
           if (!item.children) {

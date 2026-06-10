@@ -6,7 +6,13 @@ import { usePathname, useRouter } from "next/navigation";
 import { Menu, LogOut } from "lucide-react";
 import AdminSidebar from "./AdminSidebar";
 
-export default function AdminShell({ children }: { children: React.ReactNode }) {
+export default function AdminShell({
+  children,
+  role,
+}: {
+  children: React.ReactNode;
+  role: string;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -27,7 +33,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         />
       )}
 
-      <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} role={role} />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header className="bg-white border-b border-gray-200 h-14 flex items-center justify-between px-4 sm:px-6 flex-shrink-0">

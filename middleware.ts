@@ -17,7 +17,12 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    await jwtVerify(token, secret());
+    const { payload } = await jwtVerify(token, secret());
+
+    if (pathname.startsWith("/admin/site") && payload.role !== "super") {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    }
+
     return NextResponse.next();
   } catch {
     const res = NextResponse.redirect(new URL("/admin/login", request.url));

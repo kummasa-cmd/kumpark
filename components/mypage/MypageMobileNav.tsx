@@ -1,0 +1,40 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { MessageSquare, ShoppingBag, HelpCircle, Settings, LayoutDashboard } from "lucide-react";
+
+const navItems = [
+  { href: "/mypage",               label: "대시보드", icon: LayoutDashboard, exact: true },
+  { href: "/mypage/consultations", label: "상담",     icon: MessageSquare },
+  { href: "/mypage/orders",        label: "주문",     icon: ShoppingBag },
+  { href: "/mypage/inquiry",       label: "문의",     icon: HelpCircle },
+  { href: "/mypage/profile",       label: "설정",     icon: Settings },
+];
+
+export default function MypageMobileNav() {
+  const pathname = usePathname();
+
+  return (
+    <nav className="md:hidden flex border-b border-gray-100 mb-6 overflow-x-auto">
+      {navItems.map((item) => {
+        const Icon = item.icon;
+        const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`flex flex-col items-center gap-1 px-4 py-3 text-xs font-medium whitespace-nowrap border-b-2 transition-colors ${
+              active
+                ? "border-brand-green text-brand-green"
+                : "border-transparent text-gray-400 hover:text-gray-600"
+            }`}
+          >
+            <Icon size={18} />
+            {item.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}

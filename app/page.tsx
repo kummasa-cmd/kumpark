@@ -3,12 +3,41 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, BookOpen, Users, BookMarked } from "lucide-react";
 import BannerCarousel from "@/components/main/BannerCarousel";
+import pool from "@/lib/db";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "검파크 | 기록이 모여 브랜드가 되는 공간",
   description:
     "루틴의 설계 베스트셀러 작가 홍성호입니다. 11권의 전자책, 60권 이상의 코칭 경험으로 당신의 작가 꿈을 도와드립니다.",
 };
+
+const SETTING_DEFAULTS: Record<string, string> = {
+  hero_title_1: "기록이 모여",
+  hero_title_2: "브랜드가 됩니다",
+  hero_subtitle:
+    "베스트셀러 루틴의 설계 홍성호 작가입니다.\n11권의 전자책을 썼고, 60권 이상의 전자책 출간을 코칭했습니다.\n1대 1 맞춤형 종이책 코칭도 진행 중입니다.\n당신의 작가 꿈을 이룰 수 있도록 함께하겠습니다.",
+  hero_badge: "루틴의 설계 베스트셀러 작가",
+  banner_interval: "10",
+  banner_1_label: "11권의 전자책 출간",
+  banner_2_label: "60+ 전자책 코칭",
+  banner_3_label: "",
+};
+
+async function getSettings(): Promise<Record<string, string>> {
+  try {
+    const { rows } = await pool.query(
+      `SELECT key, value FROM site_settings WHERE key = ANY($1)`,
+      [Object.keys(SETTING_DEFAULTS)]
+    );
+    const settings = { ...SETTING_DEFAULTS };
+    for (const row of rows) settings[row.key] = row.value;
+    return settings;
+  } catch {
+    return SETTING_DEFAULTS;
+  }
+}
 
 const featuredProducts = [
   {
@@ -40,28 +69,31 @@ const featuredProducts = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const s = await getSettings();
+
+  const bannerLabels = [
+    s.banner_1_label || null,
+    s.banner_2_label || null,
+    s.banner_3_label || null,
+  ];
+  const bannerInterval = parseInt(s.banner_interval, 10) || 10;
+
   return (
     <>
       {/* Hero */}
       <section className="bg-white py-20 sm:py-28">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
           <p className="inline-block bg-brand-yellow text-brand-text text-xs font-semibold px-3 py-1 rounded-full mb-6">
-            루틴의 설계 베스트셀러 작가
+            {s.hero_badge}
           </p>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-brand-text leading-tight tracking-tight mb-6">
-            기록이 모여
+            {s.hero_title_1}
             <br />
-            <span className="text-brand-green">브랜드가 됩니다</span>
+            <span className="text-brand-green">{s.hero_title_2}</span>
           </h1>
-          <p className="text-lg sm:text-xl text-brand-muted max-w-2xl mx-auto mb-10 leading-relaxed">
-            베스트셀러 루틴의 설계 홍성호 작가입니다. 
-	    <br className="hidden sm:block" />
-	    11권의 전자책을 썼고, 60권 이상의 전자책 출간을 코칭했습니다.
-            <br className="hidden sm:block" />
-	    1대 1 맞춤형 종이책 코칭도 진행 중입니다.
-	    <br className="hidden sm:block" />
-            당신의 작가 꿈을 이룰 수 있도록 함께하겠습니다.
+          <p className="text-lg sm:text-xl text-brand-muted max-w-2xl mx-auto mb-10 leading-relaxed whitespace-pre-line">
+            {s.hero_subtitle}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -81,7 +113,7 @@ export default function HomePage() {
       </section>
 
       {/* Banner Carousel */}
-      <BannerCarousel />
+      <BannerCarousel labels={bannerLabels} interval={bannerInterval} />
 
       {/* Featured Products */}
       <section className="py-20 bg-white">

@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     }
 
     const { rows } = await pool.query(
-      "SELECT id, email, name, password_hash, role FROM admins WHERE email = $1 AND status = 'active'",
+      "SELECT id, email, name, password_hash, role, status FROM admins WHERE email = $1",
       [email]
     );
 
@@ -23,6 +23,13 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "이메일 또는 비밀번호가 올바르지 않습니다." },
         { status: 401 }
+      );
+    }
+
+    if (admin.status !== "active") {
+      return NextResponse.json(
+        { error: "비활성화된 계정입니다. 관리자에게 문의하세요." },
+        { status: 403 }
       );
     }
 

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { cookies } from "next/headers";
 import "./globals.css";
 import ConditionalShell from "@/components/layout/ConditionalShell";
+import { verifyMemberToken, MEMBER_COOKIE } from "@/lib/member-auth";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -29,11 +31,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const token = cookies().get(MEMBER_COOKIE)?.value;
+  const member = token ? await verifyMemberToken(token) : null;
+
   return (
     <html lang="ko" className={inter.variable}>
       <head>
@@ -44,7 +49,7 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased min-h-screen flex flex-col">
-        <ConditionalShell>{children}</ConditionalShell>
+        <ConditionalShell memberName={member?.name ?? null}>{children}</ConditionalShell>
       </body>
     </html>
   );

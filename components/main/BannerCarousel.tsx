@@ -3,25 +3,38 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-const banners = [
-  { src: "/images/my_banner1.png", alt: "검파크 배너 1", label: "11권의 전자책 출간", position: "top-left" },
-  { src: "/images/my_banner2.jpg", alt: "검파크 배너 2", label: "60+ 전자책 코칭", position: "center" },
-  { src: "/images/main_banner3.png", alt: "검파크 배너 3", label: null, position: null },
-];
+type BannerItem = {
+  src: string;
+  alt: string;
+  label: string | null;
+  position: "top-left" | "center" | null;
+};
 
-export default function BannerCarousel() {
+export default function BannerCarousel({
+  labels,
+  interval,
+}: {
+  labels: (string | null)[];
+  interval: number;
+}) {
+  const banners: BannerItem[] = [
+    { src: "/images/my_banner1.png", alt: "검파크 배너 1", label: labels[0] ?? null, position: "top-left" },
+    { src: "/images/my_banner2.jpg",  alt: "검파크 배너 2", label: labels[1] ?? null, position: "center" },
+    { src: "/images/main_banner3.png", alt: "검파크 배너 3", label: labels[2] ?? null, position: null },
+  ];
+
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {
+    const ms = Math.max(3, interval) * 1000;
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % banners.length);
-    }, 10000);
+    }, ms);
     return () => clearInterval(timer);
-  }, []);
+  }, [interval, banners.length]);
 
   return (
     <section className="bg-white">
-      {/* Slide track */}
       <div className="overflow-hidden w-full">
         <div
           className="flex transition-transform duration-700 ease-in-out"
@@ -59,7 +72,6 @@ export default function BannerCarousel() {
         </div>
       </div>
 
-      {/* Dot indicators */}
       <div className="flex justify-center items-center gap-2 py-4">
         {banners.map((_, idx) => (
           <button

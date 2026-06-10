@@ -80,12 +80,13 @@ CREATE TABLE IF NOT EXISTS admins (
 
 -- 게시판
 CREATE TABLE IF NOT EXISTS boards (
-  id          SERIAL PRIMARY KEY,
-  name        VARCHAR(100)  NOT NULL,
-  slug        VARCHAR(100)  NOT NULL UNIQUE,
-  sort_order  INTEGER       NOT NULL DEFAULT 0,
-  is_visible  BOOLEAN       NOT NULL DEFAULT TRUE,
-  created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+  id            SERIAL PRIMARY KEY,
+  name          VARCHAR(100)  NOT NULL,
+  slug          VARCHAR(100)  NOT NULL UNIQUE,
+  sort_order    INTEGER       NOT NULL DEFAULT 0,
+  is_visible    BOOLEAN       NOT NULL DEFAULT TRUE,
+  user_writable BOOLEAN       NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
 
 -- 게시물

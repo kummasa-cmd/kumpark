@@ -12,6 +12,12 @@ type FormData = {
   message: string;
 };
 
+interface ContactFormProps {
+  memberName?: string;
+  memberEmail?: string;
+  memberPhone?: string;
+}
+
 const snsLinks = [
   { label: "블로그 (네이버)", href: "https://blog.naver.com/kummasa" },
   { label: "스레드", href: "https://www.threads.com/@kumma7" },
@@ -19,22 +25,41 @@ const snsLinks = [
   { label: "인스타그램", href: "https://www.instagram.com/kumma7/" },
 ];
 
-export default function ContactForm() {
+export default function ContactForm({ memberName, memberEmail, memberPhone }: ContactFormProps) {
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
-  } = useForm<FormData>();
+  } = useForm<FormData>({
+    defaultValues: {
+      name: memberName ?? "",
+      email: memberEmail ?? "",
+      phone: memberPhone ?? "",
+    },
+  });
 
   const onSubmit = async (data: FormData) => {
-    // TODO: integrate email service (e.g. Resend, EmailJS)
-    console.log("Form submitted:", data);
-    await new Promise((r) => setTimeout(r, 800));
-    setSubmitted(true);
-    reset();
+    setError("");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      if (res.ok) {
+        setSubmitted(true);
+        reset();
+      } else {
+        setError(json.error ?? "전송에 실패했습니다. 다시 시도해 주세요.");
+      }
+    } catch {
+      setError("서버에 연결할 수 없습니다.");
+    }
   };
 
   return (
@@ -133,6 +158,10 @@ export default function ContactForm() {
                 <p className="text-xs text-red-500 mt-1">{errors.message.message}</p>
               )}
             </div>
+
+            {error && (
+              <p className="text-sm text-red-500 bg-red-50 px-4 py-3 rounded-lg">{error}</p>
+            )}
 
             <button
               type="submit"

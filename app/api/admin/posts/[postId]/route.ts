@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { ensurePostAdminReply } from "@/lib/ensure-tables";
 
 export async function GET(
   _req: Request,
@@ -35,6 +36,23 @@ export async function PUT(
     [title, author_name, content, is_notice ?? false, category_id ?? null, postDate, params.postId]
   );
 
+  if (rowCount === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  return NextResponse.json({ ok: true });
+}
+
+export async function PATCH(
+  req: Request,
+  { params }: { params: { postId: string } }
+) {
+  await ensurePostAdminReply();
+  const { reply } = await req.json();
+  if (!reply?.trim()) {
+    return NextResponse.json({ error: "답변 내용을 입력하세요." }, { status: 400 });
+  }
+  const { rowCount } = await pool.query(
+    `UPDATE posts SET admin_reply=$1, admin_replied_at=NOW(), updated_at=NOW() WHERE id=$2`,
+    [reply.trim(), params.postId]
+  );
   if (rowCount === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ ok: true });
 }

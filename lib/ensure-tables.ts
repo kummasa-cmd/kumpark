@@ -43,6 +43,11 @@ export async function ensureMemberTables() {
   `);
 }
 
+export async function ensurePostAdminReply() {
+  await pool.query(`ALTER TABLE posts ADD COLUMN IF NOT EXISTS admin_reply TEXT`);
+  await pool.query(`ALTER TABLE posts ADD COLUMN IF NOT EXISTS admin_replied_at TIMESTAMPTZ`);
+}
+
 export async function ensureCategoryTables() {
   await pool.query(
     `ALTER TABLE boards ADD COLUMN IF NOT EXISTS user_writable BOOLEAN NOT NULL DEFAULT TRUE`

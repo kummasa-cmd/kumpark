@@ -19,7 +19,7 @@ export default async function AdminInquiriesPage({
 
   // 마이페이지 문의 (member_inquiries)
   const { rows: mypageRows } = await pool.query(`
-    SELECT i.id, i.subject, i.message, i.status, i.reply,
+    SELECT i.id, i.subject, i.message, i.status, i.reply, i.category,
            m.name AS member_name, m.email AS member_email,
            TO_CHAR(i.created_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD HH24:MI') AS created_at,
            TO_CHAR(i.replied_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD HH24:MI') AS replied_at

@@ -4,9 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 
-type FormData = { subject: string; message: string };
+type FormData = { category: string; subject: string; message: string };
 
-export default function InquiryForm() {
+export default function InquiryForm({
+  categories,
+}: {
+  categories: { id: number; name: string }[];
+}) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -53,6 +57,24 @@ export default function InquiryForm() {
     <div className="bg-white rounded-xl border border-gray-200 p-5">
       <h3 className="font-semibold text-gray-800 mb-4">새 문의 작성</h3>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+        {categories.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              카테고리
+            </label>
+            <select
+              {...register("category")}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand-green transition-colors bg-white"
+            >
+              <option value="">카테고리 선택 (선택사항)</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">제목</label>
           <input

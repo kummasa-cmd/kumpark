@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import pool from "@/lib/db";
 import { verifyMemberToken, MEMBER_COOKIE } from "@/lib/member-auth";
-import { ensureMemberTables } from "@/lib/ensure-tables";
+import { ensureMemberTables, ensureInquiryCategory } from "@/lib/ensure-tables";
 
 async function getMe() {
   const token = cookies().get(MEMBER_COOKIE)?.value;
@@ -31,17 +31,18 @@ export async function POST(request: Request) {
   if (!me) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   await ensureMemberTables();
+  await ensureInquiryCategory();
 
-  const { subject, message } = await request.json();
+  const { subject, message, category } = await request.json();
   if (!subject || !message) {
     return NextResponse.json({ error: "제목과 내용을 입력하세요." }, { status: 400 });
   }
 
   const { rows } = await pool.query(
-    `INSERT INTO member_inquiries (member_id, subject, message, status, created_at)
-     VALUES ($1, $2, $3, 'pending', NOW())
+    `INSERT INTO member_inquiries (member_id, subject, message, category, status, created_at)
+     VALUES ($1, $2, $3, $4, 'pending', NOW())
      RETURNING id`,
-    [me.id, subject.trim(), message.trim()]
+    [me.id, subject.trim(), message.trim(), category?.trim() || null]
   );
   return NextResponse.json({ ok: true, id: rows[0].id });
 }

@@ -10,6 +10,7 @@ interface Inquiry {
   message: string;
   status: string;
   reply: string | null;
+  category: string | null;
   member_name: string;
   member_email: string;
   created_at: string;
@@ -57,8 +58,15 @@ export default function InquiryReplySection({ inquiry: q }: { inquiry: Inquiry }
             {q.status === "pending" ? "미답변" : "답변완료"}
           </span>
           <div className="min-w-0">
-            <p className="text-sm font-medium text-gray-800 truncate">{q.subject}</p>
-            <p className="text-xs text-gray-400">{q.member_name} · {q.member_email}</p>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {q.category && (
+                <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
+                  {q.category}
+                </span>
+              )}
+              <p className="text-sm font-medium text-gray-800 truncate">{q.subject}</p>
+            </div>
+            <p className="text-xs text-gray-400 mt-0.5">{q.member_name} · {q.member_email}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0 ml-3">

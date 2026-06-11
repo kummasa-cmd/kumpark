@@ -43,6 +43,12 @@ export async function ensureMemberTables() {
   `);
 }
 
+export async function ensureInquiryCategory() {
+  await pool.query(
+    `ALTER TABLE member_inquiries ADD COLUMN IF NOT EXISTS category VARCHAR(100)`
+  );
+}
+
 export async function ensurePostAdminReply() {
   await pool.query(`ALTER TABLE posts ADD COLUMN IF NOT EXISTS admin_reply TEXT`);
   await pool.query(`ALTER TABLE posts ADD COLUMN IF NOT EXISTS admin_replied_at TIMESTAMPTZ`);

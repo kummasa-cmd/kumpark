@@ -7,9 +7,9 @@ import { useForm } from "react-hook-form";
 type FormData = { category: string; subject: string; message: string };
 
 export default function InquiryForm({
-  categories,
+  categories = [],
 }: {
-  categories: { id: number; name: string }[];
+  categories?: { id: number; name: string }[];
 }) {
   const router = useRouter();
   const [error, setError] = useState("");

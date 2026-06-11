@@ -17,14 +17,20 @@ export default async function InquiryPage() {
   await ensureMemberTables();
   await ensureInquiryCategory();
 
-  // qna 게시판 카테고리 조회
-  const { rows: categories } = await pool.query<{ id: number; name: string }>(
-    `SELECT bc.id, bc.name
-     FROM board_categories bc
-     JOIN boards b ON b.id = bc.board_id
-     WHERE b.slug = 'qna' AND b.use_category = TRUE
-     ORDER BY bc.sort_order, bc.name`
-  );
+  // qna 게시판 카테고리 조회 (board_categories 테이블이 없을 수 있으므로 try/catch)
+  let categories: { id: number; name: string }[] = [];
+  try {
+    const { rows: cats } = await pool.query<{ id: number; name: string }>(
+      `SELECT bc.id, bc.name
+       FROM board_categories bc
+       JOIN boards b ON b.id = bc.board_id
+       WHERE b.slug = 'qna' AND b.use_category = TRUE
+       ORDER BY bc.sort_order, bc.name`
+    );
+    categories = cats;
+  } catch {
+    // board_categories 테이블 미생성 시 빈 배열 유지
+  }
 
   const { rows } = await pool.query(
     `SELECT id, subject, message, status, reply, category,

@@ -168,6 +168,9 @@ export default async function CommunityBoardPage({
                     href={`/community/${params.slug}/${p.id}`}
                     className="flex items-center gap-3 px-5 py-4 hover:bg-gray-50 transition-colors"
                   >
+                    <span className="shrink-0 w-8 text-center text-xs text-gray-400">
+                      {p.rn}
+                    </span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         {p.is_notice && (

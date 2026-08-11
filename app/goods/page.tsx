@@ -4,7 +4,7 @@ import { CheckCircle, ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "상품소개",
-  description: "전자책 그룹/개인 코칭, 종이책 1대1 코칭 상품을 소개합니다. 기획부터 출간, 마케팅까지.",
+  description: "전자책 코칭, 종이책 코칭 상품을 소개합니다. 기획부터 출간, 마케팅까지.",
 };
 
 const ebookItems = [
@@ -42,63 +42,33 @@ export default function GoodsPage() {
           <h2 className="text-xl font-bold text-brand-text mb-6 pb-3 border-b border-gray-200">
             전자책 코칭
           </h2>
-          <div className="grid sm:grid-cols-2 gap-6">
-
-            {/* Group */}
-            <div className="border border-gray-200 rounded-xl p-6 flex flex-col">
-              <div className="mb-4">
+          <div className="border border-gray-200 rounded-xl p-8">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
+              <div className="flex-1">
                 <p className="text-xs font-semibold text-brand-green bg-green-50 px-2 py-0.5 rounded-full inline-block mb-3">
-                  그룹 코칭
+                  1대1 코칭
                 </p>
-                <h3 className="text-xl font-bold text-brand-text">전자책 그룹 코칭</h3>
-                <p className="text-sm text-brand-muted mt-1">6주 과정 · 소수 정예</p>
+                <h3 className="text-xl font-bold text-brand-text mb-1">전자책 코칭</h3>
+                <p className="text-sm text-brand-muted mb-4">6주 과정 · 1대1 맞춤</p>
+                <ul className="space-y-2">
+                  {ebookItems.map((item) => (
+                    <li key={item} className="flex items-start gap-2 text-sm text-brand-text">
+                      <CheckCircle size={16} className="text-brand-green flex-shrink-0 mt-0.5" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <div className="text-2xl font-bold text-brand-green mb-6">₩150,000</div>
-              <ul className="space-y-2 flex-1">
-                {ebookItems.map((item) => (
-                  <li key={item} className="flex items-start gap-2 text-sm text-brand-text">
-                    <CheckCircle size={16} className="text-brand-green flex-shrink-0 mt-0.5" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href="/contact"
-                className="mt-6 bg-brand-green text-white font-semibold py-3 rounded-lg text-center hover:bg-green-800 transition-colors inline-block"
-              >
-                신청하기
-              </Link>
-            </div>
-
-            {/* Individual */}
-            <div className="border-2 border-brand-green rounded-xl p-6 flex flex-col relative">
-              <div className="absolute -top-3 right-4">
-                <span className="bg-brand-yellow text-brand-text text-xs font-bold px-3 py-1 rounded-full">
-                  추천
-                </span>
+              <div className="sm:text-right">
+                <p className="text-2xl font-bold text-brand-green mb-1">상담 후 안내</p>
+                <p className="text-xs text-brand-muted mb-6">6주 과정</p>
+                <Link
+                  href="/contact"
+                  className="bg-brand-green text-white font-semibold px-6 py-3 rounded-lg hover:bg-green-800 transition-colors inline-flex items-center gap-2"
+                >
+                  상담 신청 <ArrowRight size={16} />
+                </Link>
               </div>
-              <div className="mb-4">
-                <p className="text-xs font-semibold text-brand-green bg-green-50 px-2 py-0.5 rounded-full inline-block mb-3">
-                  개인 코칭
-                </p>
-                <h3 className="text-xl font-bold text-brand-text">전자책 개인 코칭</h3>
-                <p className="text-sm text-brand-muted mt-1">6주 과정 · 1대1 맞춤</p>
-              </div>
-              <div className="text-2xl font-bold text-brand-green mb-6">상담 후 안내</div>
-              <ul className="space-y-2 flex-1">
-                {ebookItems.map((item) => (
-                  <li key={item} className="flex items-start gap-2 text-sm text-brand-text">
-                    <CheckCircle size={16} className="text-brand-green flex-shrink-0 mt-0.5" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href="/contact"
-                className="mt-6 bg-brand-green text-white font-semibold py-3 rounded-lg text-center hover:bg-green-800 transition-colors inline-block"
-              >
-                상담 신청
-              </Link>
             </div>
           </div>
         </section>
@@ -126,8 +96,8 @@ export default function GoodsPage() {
                 </ul>
               </div>
               <div className="sm:text-right">
-                <p className="text-2xl font-bold text-brand-green mb-1">협의</p>
-                <p className="text-xs text-brand-muted mb-6">상담 후 안내</p>
+                <p className="text-2xl font-bold text-brand-green mb-1">상담 후 안내</p>
+                <p className="text-xs text-brand-muted mb-6">5개월 과정</p>
                 <Link
                   href="/contact"
                   className="bg-brand-green text-white font-semibold px-6 py-3 rounded-lg hover:bg-green-800 transition-colors inline-flex items-center gap-2"

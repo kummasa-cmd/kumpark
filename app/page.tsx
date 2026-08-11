@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, BookOpen, Users, BookMarked } from "lucide-react";
+import { ArrowRight, BookOpen, BookMarked } from "lucide-react";
 import BannerCarousel from "@/components/main/BannerCarousel";
 import pool from "@/lib/db";
 
@@ -41,17 +41,8 @@ async function getSettings(): Promise<Record<string, string>> {
 
 const featuredProducts = [
   {
-    icon: Users,
-    title: "전자책 그룹 코칭",
-    description:
-      "6주 과정으로 기획부터 출간, 마케팅까지 함께합니다. 같은 목표를 가진 동료들과 함께 성장하세요.",
-    price: "₩150,000",
-    period: "6주 과정",
-    href: "/goods",
-  },
-  {
     icon: BookOpen,
-    title: "전자책 개인 코칭",
+    title: "전자책 코칭",
     description:
       "1대1 맞춤 코칭으로 나만의 전자책을 완성합니다. 기획, 초고, 퇴고, 출간, 마케팅을 밀착 지원합니다.",
     price: "상담 후 안내",
@@ -60,7 +51,7 @@ const featuredProducts = [
   },
   {
     icon: BookMarked,
-    title: "종이책 1대1 코칭",
+    title: "종이책 코칭",
     description:
       "꿈꾸던 종이책 출간을 현실로. 주 1회 코치 + 오프라인 4회로 기획에서 투고까지 5개월 밀착 과정입니다.",
     price: "상담 후 안내",
@@ -122,7 +113,7 @@ export default async function HomePage() {
             <h2 className="text-3xl font-bold text-brand-text mb-3">대표 상품</h2>
             <p className="text-brand-muted">당신에게 맞는 코칭을 선택하세요</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
             {featuredProducts.map((product) => {
               const Icon = product.icon;
               return (

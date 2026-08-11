@@ -3,14 +3,17 @@ import pool from "@/lib/db";
 import { ensureMemberTables, ensurePostAdminReply } from "@/lib/ensure-tables";
 import InquiryReplySection from "@/components/admin/InquiryReplySection";
 import BoardInquiryItem, { type BoardInquiry } from "@/components/admin/BoardInquiryItem";
+import Pagination from "@/components/admin/Pagination";
 
 export const metadata: Metadata = { title: "1대1 문의" };
 export const dynamic = "force-dynamic";
 
+const PAGE_SIZE = 10;
+
 export default async function AdminInquiriesPage({
   searchParams,
 }: {
-  searchParams: { tab?: string };
+  searchParams: { tab?: string; page?: string };
 }) {
   await ensureMemberTables();
   await ensurePostAdminReply();
@@ -57,6 +60,10 @@ export default async function AdminInquiriesPage({
   const activeRows = tab === "board" ? boardRows : mypageRows;
   const activePending = tab === "board" ? boardPending : mypagePending;
 
+  const totalPages = Math.max(1, Math.ceil(activeRows.length / PAGE_SIZE));
+  const page = Math.min(Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1), totalPages);
+  const pagedRows = activeRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
     <div className="space-y-5">
       <div>
@@ -97,15 +104,22 @@ export default async function AdminInquiriesPage({
       ) : (
         <div className="space-y-3">
           {tab === "board"
-            ? (boardRows as BoardInquiry[]).map((q) => (
+            ? (pagedRows as BoardInquiry[]).map((q) => (
                 <BoardInquiryItem key={q.id} inquiry={q} />
               ))
-            : mypageRows.map((q) => (
+            : (pagedRows as typeof mypageRows).map((q) => (
                 <InquiryReplySection key={q.id} inquiry={q} />
               ))
           }
         </div>
       )}
+
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        basePath="/admin/inquiries"
+        searchParams={{ tab }}
+      />
     </div>
   );
 }

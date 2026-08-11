@@ -4,26 +4,41 @@ import { UserPlus } from "lucide-react";
 import pool from "@/lib/db";
 import { ensureMemberColumns } from "@/lib/ensure-tables";
 import MemberDeleteButton from "@/components/admin/MemberDeleteButton";
+import Pagination from "@/components/admin/Pagination";
 
 export const metadata: Metadata = { title: "회원목록" };
 export const dynamic = "force-dynamic";
 
-export default async function MembersPage() {
+const PAGE_SIZE = 15;
+
+export default async function MembersPage({
+  searchParams,
+}: {
+  searchParams: { page?: string };
+}) {
   await ensureMemberColumns();
 
-  const { rows } = await pool.query(`
-    SELECT id, name, nickname, email, phone, status, sms_yn, email_yn,
+  const { rows: countRows } = await pool.query(`SELECT COUNT(*)::int AS count FROM members`);
+  const total = countRows[0].count;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const page = Math.min(Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1), totalPages);
+  const offset = (page - 1) * PAGE_SIZE;
+
+  const { rows } = await pool.query(
+    `SELECT id, name, nickname, email, phone, status, sms_yn, email_yn,
            TO_CHAR(created_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD') AS created_at
     FROM members
     ORDER BY created_at DESC, id DESC
-  `);
+    LIMIT $1 OFFSET $2`,
+    [PAGE_SIZE, offset]
+  );
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900">회원목록</h1>
-          <p className="text-sm text-gray-500 mt-0.5">총 {rows.length}명의 회원이 있습니다.</p>
+          <p className="text-sm text-gray-500 mt-0.5">총 {total}명의 회원이 있습니다.</p>
         </div>
         <Link
           href="/admin/members/new"
@@ -53,7 +68,7 @@ export default async function MembersPage() {
             <tbody className="divide-y divide-gray-50">
               {rows.map((m, idx) => (
                 <tr key={m.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-5 py-3 text-gray-400 text-xs">{rows.length - idx}</td>
+                  <td className="px-5 py-3 text-gray-400 text-xs">{total - (offset + idx)}</td>
                   <td className="px-5 py-3">
                     <div className="font-medium text-gray-800">{m.name}</div>
                   </td>
@@ -112,6 +127,8 @@ export default async function MembersPage() {
           </table>
         </div>
       </div>
+
+      <Pagination currentPage={page} totalPages={totalPages} basePath="/admin/members" />
     </div>
   );
 }

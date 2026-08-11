@@ -3,16 +3,18 @@ import pool from "@/lib/db";
 import { ensureMemberTables } from "@/lib/ensure-tables";
 import ConsultationItem, { type Consultation } from "@/components/admin/ConsultationItem";
 import ConsultationSearch from "@/components/admin/ConsultationSearch";
+import Pagination from "@/components/admin/Pagination";
 
 export const metadata: Metadata = { title: "상담목록" };
 export const dynamic = "force-dynamic";
 
 type FilterStatus = "all" | "pending" | "resolved";
+const PAGE_SIZE = 10;
 
 export default async function ConsultationsPage({
   searchParams,
 }: {
-  searchParams: { status?: string; q?: string };
+  searchParams: { status?: string; q?: string; page?: string };
 }) {
   await ensureMemberTables();
 
@@ -52,6 +54,10 @@ export default async function ConsultationsPage({
 
   const totalPending = rows.filter((r) => r.status === "pending").length;
   const totalResolved = rows.filter((r) => r.status === "resolved").length;
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const page = Math.min(Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1), totalPages);
+  const pagedRows = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const tabs: { label: string; value: FilterStatus; count: number }[] = [
     { label: "전체",    value: "all",      count: rows.length },
@@ -111,11 +117,18 @@ export default async function ConsultationsPage({
         </div>
       ) : (
         <div className="space-y-2">
-          {rows.map((c) => (
+          {pagedRows.map((c) => (
             <ConsultationItem key={c.id} c={c} />
           ))}
         </div>
       )}
+
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        basePath="/admin/consultations"
+        searchParams={{ status: filterStatus !== "all" ? filterStatus : undefined, q: query || undefined }}
+      />
     </div>
   );
 }

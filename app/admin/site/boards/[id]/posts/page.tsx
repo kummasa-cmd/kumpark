@@ -5,11 +5,20 @@ import { notFound } from "next/navigation";
 import pool from "@/lib/db";
 import { ensureCategoryTables } from "@/lib/ensure-tables";
 import PostDeleteButton from "@/components/admin/PostDeleteButton";
+import Pagination from "@/components/admin/Pagination";
 
 export const metadata: Metadata = { title: "게시물 관리" };
 export const dynamic = "force-dynamic";
 
-export default async function BoardPostsPage({ params }: { params: { id: string } }) {
+const PAGE_SIZE = 15;
+
+export default async function BoardPostsPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams: { page?: string };
+}) {
   await ensureCategoryTables();
 
   const { rows: boardRows } = await pool.query(
@@ -23,6 +32,15 @@ export default async function BoardPostsPage({ params }: { params: { id: string 
   if (!boardRows[0]) notFound();
   const board = boardRows[0];
 
+  const { rows: countRows } = await pool.query(
+    `SELECT COUNT(*)::int AS count FROM posts WHERE board_id = $1`,
+    [params.id]
+  );
+  const total = countRows[0].count;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const page = Math.min(Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1), totalPages);
+  const offset = (page - 1) * PAGE_SIZE;
+
   const { rows: posts } = await pool.query(
     `SELECT p.id, p.title, p.author_name, p.is_notice, p.view_count, p.created_at,
             bc.name AS category_name,
@@ -31,8 +49,9 @@ export default async function BoardPostsPage({ params }: { params: { id: string 
      FROM posts p
      LEFT JOIN board_categories bc ON bc.id = p.category_id
      WHERE p.board_id = $1
-     ORDER BY p.is_notice DESC, p.created_at DESC`,
-    [params.id]
+     ORDER BY p.is_notice DESC, p.created_at DESC
+     LIMIT $2 OFFSET $3`,
+    [params.id, PAGE_SIZE, offset]
   );
 
   const colSpan = board.use_category ? 7 : 6;
@@ -59,7 +78,7 @@ export default async function BoardPostsPage({ params }: { params: { id: string 
               </span>
             </div>
             <p className="text-sm text-gray-500 mt-0.5">
-              <span className="font-mono text-xs">/community/{board.slug}</span> · 총 {posts.length}개
+              <span className="font-mono text-xs">/community/{board.slug}</span> · 총 {total}개
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -162,6 +181,12 @@ export default async function BoardPostsPage({ params }: { params: { id: string 
           </table>
         </div>
       </div>
+
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        basePath={`/admin/site/boards/${params.id}/posts`}
+      />
     </div>
   );
 }

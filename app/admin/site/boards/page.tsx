@@ -4,15 +4,28 @@ import { LayoutList } from "lucide-react";
 import pool from "@/lib/db";
 import { ensureCategoryTables } from "@/lib/ensure-tables";
 import BoardDeleteButton from "@/components/admin/BoardDeleteButton";
+import Pagination from "@/components/admin/Pagination";
 
 export const metadata: Metadata = { title: "게시판관리" };
 export const dynamic = "force-dynamic";
 
-export default async function SiteBoardsPage() {
+const PAGE_SIZE = 15;
+
+export default async function SiteBoardsPage({
+  searchParams,
+}: {
+  searchParams: { page?: string };
+}) {
   await ensureCategoryTables();
 
-  const { rows } = await pool.query(`
-    SELECT b.id, b.name, b.slug, b.sort_order, b.is_visible,
+  const { rows: countRows } = await pool.query(`SELECT COUNT(*)::int AS count FROM boards`);
+  const total = countRows[0].count;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const page = Math.min(Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1), totalPages);
+  const offset = (page - 1) * PAGE_SIZE;
+
+  const { rows } = await pool.query(
+    `SELECT b.id, b.name, b.slug, b.sort_order, b.is_visible,
            COALESCE(b.user_writable, TRUE) AS user_writable,
            COALESCE(b.board_type, 'general') AS board_type,
            COUNT(p.id)::int AS post_count
@@ -20,7 +33,9 @@ export default async function SiteBoardsPage() {
     LEFT JOIN posts p ON p.board_id = b.id
     GROUP BY b.id
     ORDER BY b.sort_order ASC, b.id ASC
-  `);
+    LIMIT $1 OFFSET $2`,
+    [PAGE_SIZE, offset]
+  );
 
   return (
     <div className="space-y-5">
@@ -123,6 +138,8 @@ export default async function SiteBoardsPage() {
           </table>
         </div>
       </div>
+
+      <Pagination currentPage={page} totalPages={totalPages} basePath="/admin/site/boards" />
     </div>
   );
 }

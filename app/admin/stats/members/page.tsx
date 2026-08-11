@@ -1,18 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import pool from "@/lib/db";
 
 export const metadata: Metadata = { title: "회원가입현황" };
-
-const monthly = [
-  { month: "2026.01", count: 2, cumulative: 14 },
-  { month: "2026.02", count: 1, cumulative: 15 },
-  { month: "2026.03", count: 3, cumulative: 18 },
-  { month: "2026.04", count: 2, cumulative: 20 },
-  { month: "2026.05", count: 1, cumulative: 21 },
-  { month: "2026.06", count: 3, cumulative: 24 },
-];
-
-const maxCount = Math.max(...monthly.map((m) => m.count));
+export const dynamic = "force-dynamic";
 
 const statLinks = [
   { label: "회원가입현황", href: "/admin/stats/members", active: true },
@@ -20,7 +11,54 @@ const statLinks = [
   { label: "상담현황", href: "/admin/stats/consultations", active: false },
 ];
 
-export default function StatsMembersPage() {
+export default async function StatsMembersPage() {
+  const [summaryRes, monthlyRes] = await Promise.all([
+    pool.query(`
+      SELECT
+        (SELECT COUNT(*)::int FROM members)                                                 AS total_members,
+        (SELECT COUNT(*)::int FROM members
+         WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW()))                AS month_new,
+        (SELECT COUNT(*)::int FROM members
+         WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW() - INTERVAL '1 month')) AS last_month_new,
+        (SELECT COUNT(*)::int FROM members WHERE status = 'inactive')                       AS inactive_members
+    `),
+    pool.query(`
+      SELECT TO_CHAR(gs, 'YYYY.MM') AS month,
+             COUNT(m.id)::int AS count,
+             (SELECT COUNT(*)::int FROM members m2 WHERE m2.created_at < gs + INTERVAL '1 month') AS cumulative
+      FROM generate_series(
+        DATE_TRUNC('month', NOW()) - INTERVAL '5 months',
+        DATE_TRUNC('month', NOW()),
+        INTERVAL '1 month'
+      ) AS gs
+      LEFT JOIN members m ON DATE_TRUNC('month', m.created_at) = gs
+      GROUP BY gs
+      ORDER BY gs
+    `),
+  ]);
+
+  const s = summaryRes.rows[0];
+  const thisMonthNew = s.month_new as number;
+  const lastMonthNew = s.last_month_new as number;
+
+  let growthLabel = "신규 없음";
+  if (lastMonthNew === 0 && thisMonthNew === 0) {
+    growthLabel = "신규 없음";
+  } else if (lastMonthNew === 0) {
+    growthLabel = "전월 대비 신규";
+  } else {
+    const pct = Math.round(((thisMonthNew - lastMonthNew) / lastMonthNew) * 100);
+    growthLabel = `${pct >= 0 ? "+" : ""}${pct}%`;
+  }
+
+  const monthly = monthlyRes.rows.map((m) => ({
+    month: m.month as string,
+    count: m.count as number,
+    cumulative: m.cumulative as number,
+  }));
+
+  const maxCount = Math.max(1, ...monthly.map((m) => m.count));
+
   return (
     <div className="space-y-5">
       <div>
@@ -47,14 +85,14 @@ export default function StatsMembersPage() {
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "총 회원수", value: "24명" },
-          { label: "이달 신규", value: "3명" },
-          { label: "전월 대비", value: "+200%" },
-          { label: "이탈 회원", value: "0명" },
-        ].map((s) => (
-          <div key={s.label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-            <p className="text-2xl font-bold text-gray-900">{s.value}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
+          { label: "총 회원수", value: `${s.total_members}명` },
+          { label: "이달 신규", value: `${thisMonthNew}명` },
+          { label: "전월 대비", value: growthLabel },
+          { label: "이탈 회원", value: `${s.inactive_members}명` },
+        ].map((c) => (
+          <div key={c.label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <p className="text-2xl font-bold text-gray-900">{c.value}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{c.label}</p>
           </div>
         ))}
       </div>

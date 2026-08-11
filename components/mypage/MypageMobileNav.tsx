@@ -2,22 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MessageSquare, ShoppingBag, HelpCircle, Settings, LayoutDashboard } from "lucide-react";
+import { MessageSquare, ClipboardList, HelpCircle, Settings, LayoutDashboard, BookOpen } from "lucide-react";
 
 const navItems = [
   { href: "/mypage",               label: "대시보드", icon: LayoutDashboard, exact: true },
   { href: "/mypage/consultations", label: "상담",     icon: MessageSquare },
-  { href: "/mypage/orders",        label: "주문",     icon: ShoppingBag },
+  { href: "/mypage/coachings",     label: "코칭내역", icon: ClipboardList },
   { href: "/mypage/inquiry",       label: "문의",     icon: HelpCircle },
+  { href: "/mypage/coaching",      label: "코칭글",   icon: BookOpen, coachingOnly: true },
   { href: "/mypage/profile",       label: "설정",     icon: Settings },
 ];
 
-export default function MypageMobileNav() {
+export default function MypageMobileNav({ showCoaching }: { showCoaching: boolean }) {
   const pathname = usePathname();
+  const visibleItems = navItems.filter((item) => !item.coachingOnly || showCoaching);
 
   return (
     <nav className="md:hidden flex border-b border-gray-100 mb-6 overflow-x-auto">
-      {navItems.map((item) => {
+      {visibleItems.map((item) => {
         const Icon = item.icon;
         const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
         return (

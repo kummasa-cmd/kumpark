@@ -6,7 +6,7 @@ import { ensureMemberColumns } from "@/lib/ensure-tables";
 export async function GET() {
   await ensureMemberColumns();
   const { rows } = await pool.query(`
-    SELECT id, name, nickname, email, phone, status, sms_yn, email_yn,
+    SELECT id, name, nickname, email, phone, status, sms_yn, email_yn, coaching_yn,
            TO_CHAR(created_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD') AS created_at
     FROM members
     ORDER BY created_at DESC, id DESC
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   const {
     name, nickname, email, phone, password, status, memo,
     blog_url, threads_url, instagram_url, x_url, brunch_url, youtube_url, homepage_url,
-    sms_yn, email_yn,
+    sms_yn, email_yn, coaching_yn,
   } = await req.json();
 
   if (!name || !nickname || !email || !password) {
@@ -36,15 +36,15 @@ export async function POST(req: Request) {
       `INSERT INTO members
          (name, nickname, email, phone, password_hash, status, memo,
           blog_url, threads_url, instagram_url, x_url, brunch_url, youtube_url, homepage_url,
-          sms_yn, email_yn)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+          sms_yn, email_yn, coaching_yn)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
        RETURNING id`,
       [
         name, nickname, email, phone ?? null,
         password_hash, status ?? "active", memo ?? null,
         blog_url ?? null, threads_url ?? null, instagram_url ?? null,
         x_url ?? null, brunch_url ?? null, youtube_url ?? null, homepage_url ?? null,
-        sms_yn ?? "Y", email_yn ?? "Y",
+        sms_yn ?? "Y", email_yn ?? "Y", coaching_yn ?? "N",
       ]
     );
     return NextResponse.json({ id: rows[0].id }, { status: 201 });

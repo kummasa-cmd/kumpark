@@ -25,7 +25,7 @@ export default async function MembersPage({
   const offset = (page - 1) * PAGE_SIZE;
 
   const { rows } = await pool.query(
-    `SELECT id, name, nickname, email, phone, status, sms_yn, email_yn,
+    `SELECT id, name, nickname, email, phone, status, sms_yn, email_yn, coaching_yn,
            TO_CHAR(created_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD') AS created_at
     FROM members
     ORDER BY created_at DESC, id DESC
@@ -62,6 +62,7 @@ export default async function MembersPage({
                 <th className="text-left px-5 py-3 font-medium">상태</th>
                 <th className="text-left px-5 py-3 font-medium hidden md:table-cell">SMS</th>
                 <th className="text-left px-5 py-3 font-medium hidden md:table-cell">이메일</th>
+                <th className="text-left px-5 py-3 font-medium hidden md:table-cell">코칭</th>
                 <th className="text-left px-5 py-3 font-medium w-24">관리</th>
               </tr>
             </thead>
@@ -103,6 +104,15 @@ export default async function MembersPage({
                       {m.email_yn === "Y" ? "동의" : "거부"}
                     </span>
                   </td>
+                  <td className="px-5 py-3 hidden md:table-cell">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      m.coaching_yn === "Y"
+                        ? "bg-purple-50 text-purple-700"
+                        : "bg-gray-100 text-gray-400"
+                    }`}>
+                      {m.coaching_yn === "Y" ? "Y" : "N"}
+                    </span>
+                  </td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
                       <Link
@@ -118,7 +128,7 @@ export default async function MembersPage({
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="px-5 py-8 text-center text-sm text-gray-400">
+                  <td colSpan={11} className="px-5 py-8 text-center text-sm text-gray-400">
                     등록된 회원이 없습니다.
                   </td>
                 </tr>

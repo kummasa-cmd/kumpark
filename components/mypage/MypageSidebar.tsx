@@ -4,30 +4,35 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   MessageSquare,
-  ShoppingBag,
+  ClipboardList,
   HelpCircle,
   Settings,
   LogOut,
   LayoutDashboard,
+  BookOpen,
 } from "lucide-react";
 import { useState } from "react";
 
 const navItems = [
   { href: "/mypage",               label: "대시보드",      icon: LayoutDashboard, exact: true },
   { href: "/mypage/consultations", label: "상담 내역",     icon: MessageSquare },
-  { href: "/mypage/orders",        label: "주문 내역",     icon: ShoppingBag },
+  { href: "/mypage/coachings",     label: "코칭 내역",     icon: ClipboardList },
   { href: "/mypage/inquiry",       label: "1대1 문의",     icon: HelpCircle },
+  { href: "/mypage/coaching",      label: "코칭 게시판",   icon: BookOpen, coachingOnly: true },
   { href: "/mypage/profile",       label: "회원정보 수정", icon: Settings },
 ];
 
 interface Props {
   memberName: string;
+  showCoaching: boolean;
 }
 
-export default function MypageSidebar({ memberName }: Props) {
+export default function MypageSidebar({ memberName, showCoaching }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
+
+  const visibleItems = navItems.filter((item) => !item.coachingOnly || showCoaching);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -50,7 +55,7 @@ export default function MypageSidebar({ memberName }: Props) {
 
       {/* 메뉴 */}
       <nav className="space-y-0.5">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item);
           return (

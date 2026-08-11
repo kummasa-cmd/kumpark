@@ -14,6 +14,8 @@ export default async function EditPostPage({
 }: {
   params: { slug: string; postId: string };
 }) {
+  if (params.slug === "coaching") redirect(`/mypage/coaching/${params.postId}`);
+
   const token = cookies().get(MEMBER_COOKIE)?.value;
   const member = token ? await verifyMemberToken(token) : null;
   if (!member) redirect(`/login?redirect=/community/${params.slug}/${params.postId}/edit`);

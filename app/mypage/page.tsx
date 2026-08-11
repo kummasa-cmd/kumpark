@@ -1,13 +1,22 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Link from "next/link";
-import { MessageSquare, ShoppingBag, HelpCircle, ArrowRight, Clock } from "lucide-react";
+import { MessageSquare, BookOpen, HelpCircle, ArrowRight, Clock } from "lucide-react";
 import pool from "@/lib/db";
 import { verifyMemberToken, MEMBER_COOKIE } from "@/lib/member-auth";
-import { ensureMemberTables } from "@/lib/ensure-tables";
+import { ensureMemberTables, ensureCoachingTable, ensureMemberColumns } from "@/lib/ensure-tables";
 
 export const metadata: Metadata = { title: "마이페이지" };
 export const dynamic = "force-dynamic";
+
+const BOOK_TYPE_LABEL: Record<string, string> = { paper: "종이책", ebook: "전자책" };
+const CATEGORY_LABEL: Record<string, string> = { group: "그룹", individual: "개인" };
+const COACHING_STATUS_LABEL: Record<string, { label: string; cls: string }> = {
+  pending:     { label: "입금대기", cls: "bg-yellow-50 text-yellow-700" },
+  in_progress: { label: "코칭중",   cls: "bg-blue-50 text-blue-700" },
+  completed:   { label: "코칭종료", cls: "bg-green-50 text-green-700" },
+  refunded:    { label: "환불",     cls: "bg-red-50 text-red-600" },
+};
 
 export default async function MypageDashboard() {
   const token = cookies().get(MEMBER_COOKIE)?.value;
@@ -15,18 +24,28 @@ export default async function MypageDashboard() {
   if (!member) return null;
 
   await ensureMemberTables();
+  await ensureCoachingTable();
+  await ensureMemberColumns();
 
-  const [consultationsRes, ordersRes, inquiriesRes] = await Promise.all([
+  const [consultationsRes, coachingsRes, boardPostsRes, inquiriesRes, memberRes] = await Promise.all([
     pool.query(
       `SELECT id, subject, status, TO_CHAR(created_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD') AS created_at
        FROM consultations WHERE member_id = $1 ORDER BY created_at DESC LIMIT 3`,
       [member.id]
     ),
     pool.query(
-      `SELECT o.id, o.order_number, p.name AS product_name, o.amount_display, o.status,
-              TO_CHAR(o.created_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD') AS created_at
-       FROM orders o JOIN products p ON p.id = o.product_id
-       WHERE o.member_id = $1 ORDER BY o.created_at DESC LIMIT 3`,
+      `SELECT id, book_type, category, product_name, status, session_count, completed_count,
+              TO_CHAR(created_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD') AS created_at
+       FROM coachings WHERE member_id = $1 ORDER BY created_at DESC LIMIT 3`,
+      [member.id]
+    ),
+    pool.query(
+      `SELECT p.id, p.title,
+              CASE WHEN p.admin_reply IS NULL THEN 'pending' ELSE 'answered' END AS status,
+              TO_CHAR(p.created_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD') AS created_at
+       FROM posts p JOIN boards b ON b.id = p.board_id
+       WHERE b.slug = 'coaching' AND p.member_id = $1
+       ORDER BY p.created_at DESC LIMIT 3`,
       [member.id]
     ),
     pool.query(
@@ -34,10 +53,11 @@ export default async function MypageDashboard() {
        FROM member_inquiries WHERE member_id = $1 ORDER BY created_at DESC LIMIT 3`,
       [member.id]
     ),
+    pool.query(`SELECT coaching_yn FROM members WHERE id = $1`, [member.id]),
   ]);
 
-  const totalOrders = await pool.query(
-    "SELECT COUNT(*)::int AS cnt FROM orders WHERE member_id = $1",
+  const totalCoachings = await pool.query(
+    "SELECT COUNT(*)::int AS cnt FROM coachings WHERE member_id = $1",
     [member.id]
   );
   const pendingInquiries = await pool.query(
@@ -45,12 +65,14 @@ export default async function MypageDashboard() {
     [member.id]
   );
 
+  const showCoachingBoard = memberRes.rows[0]?.coaching_yn === "Y";
+
   const stats = [
     {
-      label: "전체 주문",
-      value: `${totalOrders.rows[0].cnt}건`,
-      icon: ShoppingBag,
-      href: "/mypage/orders",
+      label: "코칭 신청",
+      value: `${totalCoachings.rows[0].cnt}건`,
+      icon: BookOpen,
+      href: "/mypage/coachings",
       color: "text-blue-600",
       bg: "bg-blue-50",
     },
@@ -71,14 +93,6 @@ export default async function MypageDashboard() {
       bg: "bg-yellow-50",
     },
   ];
-
-  const ORDER_STATUS: Record<string, { label: string; cls: string }> = {
-    paid:        { label: "결제완료", cls: "bg-blue-50 text-blue-700" },
-    consulting:  { label: "상담중",   cls: "bg-yellow-50 text-yellow-700" },
-    in_progress: { label: "진행중",   cls: "bg-purple-50 text-purple-700" },
-    completed:   { label: "완료",     cls: "bg-green-50 text-green-700" },
-    cancelled:   { label: "취소",     cls: "bg-red-50 text-red-600" },
-  };
 
   return (
     <div className="space-y-6">
@@ -107,36 +121,75 @@ export default async function MypageDashboard() {
         })}
       </div>
 
-      {/* 최근 주문 */}
+      {/* 코칭 목록 */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
-          <h2 className="font-semibold text-gray-800 text-sm">최근 주문</h2>
-          <Link href="/mypage/orders" className="text-xs text-brand-green hover:underline flex items-center gap-1">
+          <h2 className="font-semibold text-gray-800 text-sm">코칭 목록</h2>
+          <Link href="/mypage/coachings" className="text-xs text-brand-green hover:underline flex items-center gap-1">
             전체보기 <ArrowRight size={12} />
           </Link>
         </div>
         <div className="divide-y divide-gray-50">
-          {ordersRes.rows.length ? (
-            ordersRes.rows.map((o) => {
-              const st = ORDER_STATUS[o.status] ?? { label: o.status, cls: "bg-gray-100 text-gray-500" };
+          {coachingsRes.rows.length ? (
+            coachingsRes.rows.map((c) => {
+              const st = COACHING_STATUS_LABEL[c.status] ?? { label: c.status, cls: "bg-gray-100 text-gray-500" };
               return (
-                <div key={o.id} className="flex items-center justify-between px-5 py-3">
+                <div key={c.id} className="flex items-center justify-between px-5 py-3">
                   <div className="min-w-0 flex-1 mr-3">
-                    <p className="text-sm font-medium text-gray-800 truncate">{o.product_name}</p>
-                    <p className="text-xs text-gray-400">{o.created_at}</p>
+                    <p className="text-sm font-medium text-gray-800 truncate">{c.product_name}</p>
+                    <p className="text-xs text-gray-400">
+                      {BOOK_TYPE_LABEL[c.book_type] ?? c.book_type} · {CATEGORY_LABEL[c.category] ?? c.category} · {c.created_at}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <p className="text-sm font-semibold text-brand-green">{o.amount_display}</p>
+                    <p className="text-xs text-gray-400">{c.completed_count}/{c.session_count}회</p>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
                   </div>
                 </div>
               );
             })
           ) : (
-            <p className="px-5 py-6 text-sm text-gray-400 text-center">주문 내역이 없습니다.</p>
+            <p className="px-5 py-6 text-sm text-gray-400 text-center">코칭 신청 내역이 없습니다.</p>
           )}
         </div>
       </div>
+
+      {/* 코칭 게시판 */}
+      {showCoachingBoard && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
+            <h2 className="font-semibold text-gray-800 text-sm">코칭 게시판</h2>
+            <Link href="/mypage/coaching" className="text-xs text-brand-green hover:underline flex items-center gap-1">
+              전체보기 <ArrowRight size={12} />
+            </Link>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {boardPostsRes.rows.length ? (
+              boardPostsRes.rows.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/mypage/coaching/${p.id}`}
+                  className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="min-w-0 flex-1 mr-3">
+                    <p className="text-sm font-medium text-gray-800 truncate">{p.title}</p>
+                    <p className="text-xs text-gray-400 flex items-center gap-1">
+                      <Clock size={10} /> {p.created_at}
+                    </p>
+                  </div>
+                  <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full ${
+                    p.status === "pending" ? "bg-yellow-50 text-yellow-700" : "bg-green-50 text-green-700"
+                  }`}>
+                    {p.status === "pending" ? "답변대기" : "답변완료"}
+                  </span>
+                </Link>
+              ))
+            ) : (
+              <p className="px-5 py-6 text-sm text-gray-400 text-center">작성한 글이 없습니다.</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 최근 1대1 문의 */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">

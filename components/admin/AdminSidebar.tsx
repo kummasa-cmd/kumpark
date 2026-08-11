@@ -56,6 +56,7 @@ const menuConfig: MenuItem[] = [
     children: [
       { label: "코칭목록", href: "/admin/coachings" },
       { label: "코칭등록", href: "/admin/coachings/new" },
+      { label: "코칭 게시판", href: "/admin/coachings/board" },
     ],
   },
   {

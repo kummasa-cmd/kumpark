@@ -21,6 +21,7 @@ type FormData = {
   homepage_url: string;
   sms_yn: string;
   email_yn: string;
+  coaching_yn: string;
 };
 
 type Member = {
@@ -40,6 +41,7 @@ type Member = {
   homepage_url: string;
   sms_yn: string;
   email_yn: string;
+  coaching_yn: string;
 };
 
 const inputClass =
@@ -76,13 +78,14 @@ export default function MemberForm({ member }: { member?: Member }) {
           homepage_url: member.homepage_url ?? "",
           sms_yn: member.sms_yn ?? "Y",
           email_yn: member.email_yn ?? "Y",
+          coaching_yn: member.coaching_yn ?? "N",
         }
       : {
           name: "", nickname: "", email: "", phone: "", password: "",
           status: "active", memo: "",
           blog_url: "", threads_url: "", instagram_url: "", x_url: "",
           brunch_url: "", youtube_url: "", homepage_url: "",
-          sms_yn: "Y", email_yn: "Y",
+          sms_yn: "Y", email_yn: "Y", coaching_yn: "N",
         },
   });
 
@@ -207,6 +210,14 @@ export default function MemberForm({ member }: { member?: Member }) {
             <select {...register("status")} className={selectClass}>
               <option value="active">정상</option>
               <option value="inactive">정지</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">코칭여부</label>
+            <select {...register("coaching_yn")} className={selectClass}>
+              <option value="N">N (코칭 미신청)</option>
+              <option value="Y">Y (코칭 신청 회원)</option>
             </select>
           </div>
         </div>

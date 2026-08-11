@@ -10,6 +10,8 @@ import PublicPostForm from "@/components/community/PublicPostForm";
 export const metadata: Metadata = { title: "글쓰기" };
 
 export default async function NewPostPage({ params }: { params: { slug: string } }) {
+  if (params.slug === "coaching") redirect("/mypage/coaching/new");
+
   const token = cookies().get(MEMBER_COOKIE)?.value;
   const member = token ? await verifyMemberToken(token) : null;
   if (!member) redirect(`/login?redirect=/community/${params.slug}/new`);

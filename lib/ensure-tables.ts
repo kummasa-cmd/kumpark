@@ -11,6 +11,7 @@ export async function ensureMemberColumns() {
   await pool.query(`ALTER TABLE members ADD COLUMN IF NOT EXISTS homepage_url VARCHAR(500)`);
   await pool.query(`ALTER TABLE members ADD COLUMN IF NOT EXISTS sms_yn CHAR(1) NOT NULL DEFAULT 'Y'`);
   await pool.query(`ALTER TABLE members ADD COLUMN IF NOT EXISTS email_yn CHAR(1) NOT NULL DEFAULT 'Y'`);
+  await pool.query(`ALTER TABLE members ADD COLUMN IF NOT EXISTS coaching_yn CHAR(1) NOT NULL DEFAULT 'N'`);
 }
 
 export async function ensurePostMemberCol() {
@@ -114,5 +115,14 @@ export async function ensureCategoryTables() {
       created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at  TIMESTAMPTZ
     )
+  `);
+}
+
+export async function ensureCoachingBoard() {
+  await pool.query(`
+    INSERT INTO boards (name, slug, board_type, user_writable, use_comment, use_category, is_visible, sort_order)
+    SELECT '코칭 게시판', 'coaching', 'personal', TRUE, TRUE, FALSE, TRUE,
+           COALESCE((SELECT MAX(sort_order) FROM boards), 0) + 1
+    WHERE NOT EXISTS (SELECT 1 FROM boards WHERE slug = 'coaching')
   `);
 }

@@ -136,6 +136,66 @@ export async function sendConsultationReply(data: ConsultationReplyData) {
   });
 }
 
+export interface CoachingPostMailData {
+  memberName: string;
+  title: string;
+  content: string;
+  postId: number;
+  submittedAt: string;
+}
+
+export async function sendCoachingPostAlert(data: CoachingPostMailData) {
+  const adminEmail = process.env.ADMIN_EMAIL ?? "kummasa@naver.com";
+  const from = process.env.SMTP_FROM ?? process.env.SMTP_USER;
+
+  await createTransporter().sendMail({
+    from: `"검파크 알림" <${from}>`,
+    to: adminEmail,
+    subject: `[검파크] 코칭 게시판 새 글 — ${data.title}`,
+    html: `
+<!DOCTYPE html>
+<html lang="ko">
+<head><meta charset="UTF-8"></head>
+<body style="font-family:'Apple SD Gothic Neo','맑은 고딕',sans-serif;background:#f9fafb;margin:0;padding:24px;">
+  <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+    <div style="background:#0B7903;padding:24px 28px;">
+      <p style="margin:0;color:#fff;font-size:20px;font-weight:700;">📬 코칭 게시판에 새 글이 등록됐습니다</p>
+      <p style="margin:4px 0 0;color:#bbf7d0;font-size:13px;">${data.submittedAt}</p>
+    </div>
+    <div style="padding:28px;">
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <tr>
+          <td style="padding:8px 0;color:#6b7280;width:90px;vertical-align:top;">작성자</td>
+          <td style="padding:8px 0;color:#111827;font-weight:600;">${escHtml(data.memberName)}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#6b7280;vertical-align:top;">제목</td>
+          <td style="padding:8px 0;color:#111827;font-weight:600;">${escHtml(data.title)}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#6b7280;vertical-align:top;">내용</td>
+          <td style="padding:8px 0;color:#374151;line-height:1.7;">${data.content}</td>
+        </tr>
+      </table>
+    </div>
+    <div style="padding:0 28px 28px;">
+      <a href="${process.env.NEXT_PUBLIC_SITE_URL ?? "https://kumpark.com"}/admin/coachings/board"
+         style="display:inline-block;background:#0B7903;color:#fff;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;text-decoration:none;">
+        관리자 페이지에서 확인하기 →
+      </a>
+    </div>
+    <div style="background:#f9fafb;padding:16px 28px;border-top:1px solid #e5e7eb;">
+      <p style="margin:0;font-size:11px;color:#9ca3af;">
+        이 메일은 kumpark.com 코칭 게시판 글 등록 시 자동 발송됩니다.
+      </p>
+    </div>
+  </div>
+</body>
+</html>`,
+    text: `코칭 게시판 새 글\n\n작성자: ${data.memberName}\n제목: ${data.title}\n\n관리자 페이지에서 확인: ${process.env.NEXT_PUBLIC_SITE_URL ?? "https://kumpark.com"}/admin/coachings/board`,
+  });
+}
+
 function escHtml(str: string): string {
   return str
     .replace(/&/g, "&amp;")

@@ -11,7 +11,7 @@ export async function GET(
   const { rows } = await pool.query(
     `SELECT id, name, nickname, email, phone, status, memo,
             blog_url, threads_url, instagram_url, x_url, brunch_url, youtube_url, homepage_url,
-            sms_yn, email_yn
+            sms_yn, email_yn, coaching_yn
      FROM members WHERE id = $1`,
     [params.id]
   );
@@ -26,7 +26,7 @@ export async function PUT(
   const {
     name, nickname, email, phone, password, status, memo,
     blog_url, threads_url, instagram_url, x_url, brunch_url, youtube_url, homepage_url,
-    sms_yn, email_yn,
+    sms_yn, email_yn, coaching_yn,
   } = await req.json();
 
   if (!name || !nickname || !email) {
@@ -43,14 +43,14 @@ export async function PUT(
         `UPDATE members
          SET name=$1, nickname=$2, email=$3, phone=$4, password_hash=$5, status=$6, memo=$7,
              blog_url=$8, threads_url=$9, instagram_url=$10, x_url=$11,
-             brunch_url=$12, youtube_url=$13, homepage_url=$14, sms_yn=$15, email_yn=$16
-         WHERE id=$17`,
+             brunch_url=$12, youtube_url=$13, homepage_url=$14, sms_yn=$15, email_yn=$16, coaching_yn=$17
+         WHERE id=$18`,
         [
           name, nickname, email, phone ?? null, password_hash,
           status ?? "active", memo ?? null,
           blog_url ?? null, threads_url ?? null, instagram_url ?? null,
           x_url ?? null, brunch_url ?? null, youtube_url ?? null, homepage_url ?? null,
-          sms_yn ?? "Y", email_yn ?? "Y",
+          sms_yn ?? "Y", email_yn ?? "Y", coaching_yn ?? "N",
           params.id,
         ]
       );
@@ -59,14 +59,14 @@ export async function PUT(
         `UPDATE members
          SET name=$1, nickname=$2, email=$3, phone=$4, status=$5, memo=$6,
              blog_url=$7, threads_url=$8, instagram_url=$9, x_url=$10,
-             brunch_url=$11, youtube_url=$12, homepage_url=$13, sms_yn=$14, email_yn=$15
-         WHERE id=$16`,
+             brunch_url=$11, youtube_url=$12, homepage_url=$13, sms_yn=$14, email_yn=$15, coaching_yn=$16
+         WHERE id=$17`,
         [
           name, nickname, email, phone ?? null,
           status ?? "active", memo ?? null,
           blog_url ?? null, threads_url ?? null, instagram_url ?? null,
           x_url ?? null, brunch_url ?? null, youtube_url ?? null, homepage_url ?? null,
-          sms_yn ?? "Y", email_yn ?? "Y",
+          sms_yn ?? "Y", email_yn ?? "Y", coaching_yn ?? "N",
           params.id,
         ]
       );

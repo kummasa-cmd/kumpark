@@ -15,7 +15,7 @@ export default async function MemberEditPage({ params }: { params: { id: string 
   const { rows } = await pool.query(
     `SELECT id, name, nickname, email, phone, status, memo,
             blog_url, threads_url, instagram_url, x_url, brunch_url, youtube_url, homepage_url,
-            sms_yn, email_yn
+            sms_yn, email_yn, coaching_yn
      FROM members WHERE id = $1`,
     [params.id]
   );

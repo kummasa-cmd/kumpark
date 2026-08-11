@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { ChevronLeft, PenLine, MessageSquare } from "lucide-react";
 import pool from "@/lib/db";
@@ -30,6 +30,8 @@ export default async function CommunityBoardPage({
   params: { slug: string };
   searchParams: { page?: string };
 }) {
+  if (params.slug === "coaching") redirect("/mypage/coaching");
+
   await ensureCategoryTables();
   await ensurePostMemberCol();
 

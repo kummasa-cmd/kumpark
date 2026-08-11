@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { ChevronLeft, Pencil } from "lucide-react";
 import pool from "@/lib/db";
@@ -27,6 +27,8 @@ export default async function PublicPostPage({
 }: {
   params: { slug: string; postId: string };
 }) {
+  if (params.slug === "coaching") redirect(`/mypage/coaching/${params.postId}`);
+
   await ensureCategoryTables();
   await ensurePostMemberCol();
 

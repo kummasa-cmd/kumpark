@@ -8,11 +8,13 @@ interface Props {
   postId: number;
   title: string;
   slug: string;
+  basePath?: string;
 }
 
-export default function PublicPostDeleteButton({ postId, title, slug }: Props) {
+export default function PublicPostDeleteButton({ postId, title, slug, basePath }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const resolvedBasePath = basePath ?? `/community/${slug}`;
 
   const handleDelete = async () => {
     if (!confirm(`"${title}"\n\n이 게시물을 삭제하시겠습니까?`)) return;
@@ -20,7 +22,7 @@ export default function PublicPostDeleteButton({ postId, title, slug }: Props) {
     try {
       const res = await fetch(`/api/community/posts/${postId}`, { method: "DELETE" });
       if (res.ok) {
-        router.push(`/community/${slug}`);
+        router.push(resolvedBasePath);
         router.refresh();
       } else {
         const json = await res.json();

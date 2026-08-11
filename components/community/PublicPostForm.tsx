@@ -13,9 +13,11 @@ type FormData = { title: string; content: string };
 interface Props {
   slug: string;
   post?: { id: number; title: string; content: string };
+  basePath?: string;
 }
 
-export default function PublicPostForm({ slug, post }: Props) {
+export default function PublicPostForm({ slug, post, basePath }: Props) {
+  const resolvedBasePath = basePath ?? `/community/${slug}`;
   const router = useRouter();
   const isEdit = !!post;
   const [error, setError] = useState("");
@@ -40,7 +42,7 @@ export default function PublicPostForm({ slug, post }: Props) {
       const json = await res.json();
       if (res.ok) {
         const id = isEdit ? post!.id : json.id;
-        router.push(`/community/${slug}/${id}`);
+        router.push(`${resolvedBasePath}/${id}`);
         router.refresh();
       } else {
         setError(json.error ?? "저장에 실패했습니다.");

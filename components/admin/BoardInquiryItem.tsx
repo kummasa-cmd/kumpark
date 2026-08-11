@@ -11,11 +11,18 @@ export interface BoardInquiry {
   admin_reply: string | null;
   member_name: string | null;
   member_email: string | null;
+  member_nickname?: string | null;
   created_at: string;
   admin_replied_at: string | null;
 }
 
-export default function BoardInquiryItem({ inquiry: q }: { inquiry: BoardInquiry }) {
+export default function BoardInquiryItem({
+  inquiry: q,
+  number,
+}: {
+  inquiry: BoardInquiry;
+  number?: number;
+}) {
   const router = useRouter();
   const [reply, setReply] = useState(q.admin_reply ?? "");
   const [loading, setLoading] = useState(false);
@@ -50,6 +57,9 @@ export default function BoardInquiryItem({ inquiry: q }: { inquiry: BoardInquiry
     <details className="bg-white rounded-xl border border-gray-100 group">
       <summary className="flex items-center justify-between px-5 py-4 cursor-pointer list-none">
         <div className="flex items-center gap-3 min-w-0 flex-1">
+          {number !== undefined && (
+            <span className="shrink-0 text-xs text-gray-400 w-6 text-right">{number}</span>
+          )}
           <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full ${
             answered
               ? "bg-green-50 text-green-700"
@@ -60,7 +70,9 @@ export default function BoardInquiryItem({ inquiry: q }: { inquiry: BoardInquiry
           <div className="min-w-0">
             <p className="text-sm font-medium text-gray-800 truncate">{q.title}</p>
             <p className="text-xs text-gray-400">
-              {q.member_name ?? "비회원"} · {q.member_email ?? "-"}
+              {q.member_name ?? "비회원"}
+              {q.member_nickname ? ` (${q.member_nickname})` : ""}
+              {q.member_nickname ? "" : ` · ${q.member_email ?? "-"}`}
             </p>
           </div>
         </div>

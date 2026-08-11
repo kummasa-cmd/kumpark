@@ -54,6 +54,28 @@ export async function ensurePostAdminReply() {
   await pool.query(`ALTER TABLE posts ADD COLUMN IF NOT EXISTS admin_replied_at TIMESTAMPTZ`);
 }
 
+export async function ensureCoachingTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS coachings (
+      id            SERIAL PRIMARY KEY,
+      member_id     INTEGER NOT NULL REFERENCES members(id),
+      book_type     VARCHAR(10) NOT NULL,
+      category      VARCHAR(15) NOT NULL,
+      product_name  VARCHAR(200) NOT NULL,
+      amount        BIGINT NOT NULL DEFAULT 0,
+      start_date    DATE,
+      end_date      DATE,
+      session_count INTEGER NOT NULL DEFAULT 0,
+      status        VARCHAR(20) NOT NULL DEFAULT 'pending',
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await pool.query(
+    `ALTER TABLE coachings ADD COLUMN IF NOT EXISTS completed_count INTEGER NOT NULL DEFAULT 0`
+  );
+}
+
 export async function ensureCategoryTables() {
   await pool.query(
     `ALTER TABLE boards ADD COLUMN IF NOT EXISTS user_writable BOOLEAN NOT NULL DEFAULT TRUE`

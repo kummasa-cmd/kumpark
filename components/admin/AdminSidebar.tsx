@@ -49,7 +49,15 @@ const menuConfig: MenuItem[] = [
       { label: "상품등록", href: "/admin/products/new" },
     ],
   },
-  { id: "orders", label: "주문관리", icon: ShoppingCart, href: "/admin/orders" },
+  {
+    id: "coachings",
+    label: "코칭관리",
+    icon: ShoppingCart,
+    children: [
+      { label: "코칭목록", href: "/admin/coachings" },
+      { label: "코칭등록", href: "/admin/coachings/new" },
+    ],
+  },
   {
     id: "consultations",
     label: "상담관리",

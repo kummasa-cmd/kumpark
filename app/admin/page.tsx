@@ -2,30 +2,32 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Users, ShoppingCart, MessageSquare, TrendingUp, ArrowRight } from "lucide-react";
 import pool from "@/lib/db";
+import { ensureCoachingTable } from "@/lib/ensure-tables";
 
 export const metadata: Metadata = { title: "대시보드" };
 export const dynamic = "force-dynamic";
 
 async function getDashboardData() {
   try {
-    const [statsRow, recentMembers, recentConsultations, recentOrders] = await Promise.all([
+    await ensureCoachingTable();
+    const [statsRow, recentMembers, recentConsultations, recentCoachings] = await Promise.all([
       // 통계 — 단일 쿼리로 한 번에
       pool.query(`
         SELECT
           (SELECT COUNT(*)::int FROM members)                                               AS total_members,
           (SELECT COUNT(*)::int FROM members
            WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW()))             AS new_members,
-          (SELECT COUNT(*)::int FROM orders)                                                AS total_orders,
-          (SELECT COUNT(*)::int FROM orders
+          (SELECT COUNT(*)::int FROM coachings)                                             AS total_orders,
+          (SELECT COUNT(*)::int FROM coachings
            WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW()))             AS new_orders,
           (SELECT COUNT(*)::int FROM consultations WHERE status = 'pending')               AS pending_consultations,
           (SELECT COUNT(*)::int FROM consultations)                                         AS total_consultations,
-          (SELECT COALESCE(SUM(amount), 0)::bigint FROM orders
+          (SELECT COALESCE(SUM(amount), 0)::bigint FROM coachings
            WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW())
-             AND status IN ('paid', 'completed', 'in_progress'))                           AS revenue_this_month,
-          (SELECT COALESCE(SUM(amount), 0)::bigint FROM orders
+             AND status IN ('in_progress', 'completed'))                                   AS revenue_this_month,
+          (SELECT COALESCE(SUM(amount), 0)::bigint FROM coachings
            WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW() - INTERVAL '1 month')
-             AND status IN ('paid', 'completed', 'in_progress'))                           AS revenue_last_month
+             AND status IN ('in_progress', 'completed'))                                   AS revenue_last_month
       `),
 
       // 최근 가입 회원 5명
@@ -46,15 +48,14 @@ async function getDashboardData() {
         LIMIT 5
       `),
 
-      // 최근 주문 5건
+      // 최근 코칭 5건
       pool.query(`
-        SELECT o.order_number, m.name AS member_name, p.name AS product_name,
-               o.amount_display, o.status,
-               TO_CHAR(o.created_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD') AS created_at
-        FROM orders o
-        JOIN members m ON m.id = o.member_id
-        JOIN products p ON p.id = o.product_id
-        ORDER BY o.created_at DESC
+        SELECT c.id, m.name AS member_name, m.nickname AS member_nickname,
+               c.product_name, c.amount, c.status,
+               TO_CHAR(c.created_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD') AS created_at
+        FROM coachings c
+        JOIN members m ON m.id = c.member_id
+        ORDER BY c.created_at DESC, c.id DESC
         LIMIT 5
       `),
     ]);
@@ -86,19 +87,18 @@ async function getDashboardData() {
       },
       recentMembers: recentMembers.rows,
       recentConsultations: recentConsultations.rows,
-      recentOrders: recentOrders.rows,
+      recentCoachings: recentCoachings.rows,
     };
   } catch {
     return null;
   }
 }
 
-const ORDER_STATUS_LABEL: Record<string, { label: string; cls: string }> = {
-  paid:        { label: "결제완료", cls: "bg-blue-50 text-blue-700" },
-  consulting:  { label: "상담중",   cls: "bg-yellow-50 text-yellow-700" },
-  in_progress: { label: "진행중",   cls: "bg-purple-50 text-purple-700" },
-  completed:   { label: "완료",     cls: "bg-green-50 text-green-700" },
-  cancelled:   { label: "취소",     cls: "bg-red-50 text-red-600" },
+const COACHING_STATUS_LABEL: Record<string, { label: string; cls: string }> = {
+  pending:     { label: "입금대기", cls: "bg-yellow-50 text-yellow-700" },
+  in_progress: { label: "코칭중",   cls: "bg-blue-50 text-blue-700" },
+  completed:   { label: "코칭종료", cls: "bg-green-50 text-green-700" },
+  refunded:    { label: "환불",     cls: "bg-red-50 text-red-600" },
 };
 
 export default async function AdminDashboard() {
@@ -119,13 +119,13 @@ export default async function AdminDashboard() {
           href: "/admin/members",
         },
         {
-          label: "총 주문수",
+          label: "총 코칭수",
           value: `${data.stats.totalOrders}건`,
           sub: `이달 신규 ${data.stats.newOrders}건`,
           icon: ShoppingCart,
           color: "text-green-600",
           bg: "bg-green-50",
-          href: "/admin/orders",
+          href: "/admin/coachings",
         },
         {
           label: "미처리 상담",
@@ -248,45 +248,48 @@ export default async function AdminDashboard() {
           </div>
         </div>
 
-        {/* 최근 주문 */}
+        {/* 최근 코칭 */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 lg:col-span-2">
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-800 text-sm">최근 주문</h2>
+            <h2 className="font-semibold text-gray-800 text-sm">최근 코칭</h2>
             <Link
-              href="/admin/orders"
+              href="/admin/coachings"
               className="text-xs text-brand-green hover:underline flex items-center gap-1"
             >
               전체보기 <ArrowRight size={12} />
             </Link>
           </div>
-          {data?.recentOrders.length ? (
+          {data?.recentCoachings.length ? (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-xs text-gray-400 border-b border-gray-50">
-                    <th className="text-left px-5 py-3 font-medium">주문번호</th>
                     <th className="text-left px-5 py-3 font-medium">회원명</th>
                     <th className="text-left px-5 py-3 font-medium hidden md:table-cell">상품</th>
                     <th className="text-left px-5 py-3 font-medium">금액</th>
                     <th className="text-left px-5 py-3 font-medium hidden md:table-cell">상태</th>
-                    <th className="text-left px-5 py-3 font-medium hidden md:table-cell">주문일</th>
+                    <th className="text-left px-5 py-3 font-medium hidden md:table-cell">등록일</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {data.recentOrders.map((o) => {
-                    const st = ORDER_STATUS_LABEL[o.status] ?? { label: o.status, cls: "bg-gray-100 text-gray-500" };
+                  {data.recentCoachings.map((c) => {
+                    const st = COACHING_STATUS_LABEL[c.status] ?? { label: c.status, cls: "bg-gray-100 text-gray-500" };
                     return (
-                      <tr key={o.order_number} className="hover:bg-gray-50">
-                        <td className="px-5 py-3 text-xs text-gray-400 font-mono">{o.order_number}</td>
-                        <td className="px-5 py-3 font-medium text-gray-800">{o.member_name}</td>
-                        <td className="px-5 py-3 text-gray-600 hidden md:table-cell">{o.product_name}</td>
-                        <td className="px-5 py-3 font-medium text-brand-green">{o.amount_display}</td>
+                      <tr key={c.id} className="hover:bg-gray-50">
+                        <td className="px-5 py-3 font-medium text-gray-800">
+                          {c.member_name}
+                          {c.member_nickname && <span className="text-gray-400"> ({c.member_nickname})</span>}
+                        </td>
+                        <td className="px-5 py-3 text-gray-600 hidden md:table-cell">{c.product_name}</td>
+                        <td className="px-5 py-3 font-medium text-brand-green">
+                          ₩{new Intl.NumberFormat("ko-KR").format(c.amount)}
+                        </td>
                         <td className="px-5 py-3 hidden md:table-cell">
                           <span className={`text-xs px-2 py-0.5 rounded-full ${st.cls}`}>
                             {st.label}
                           </span>
                         </td>
-                        <td className="px-5 py-3 text-gray-400 text-xs hidden md:table-cell">{o.created_at}</td>
+                        <td className="px-5 py-3 text-gray-400 text-xs hidden md:table-cell">{c.created_at}</td>
                       </tr>
                     );
                   })}
@@ -294,7 +297,7 @@ export default async function AdminDashboard() {
               </table>
             </div>
           ) : (
-            <p className="px-5 py-6 text-sm text-gray-400 text-center">주문 내역이 없습니다.</p>
+            <p className="px-5 py-6 text-sm text-gray-400 text-center">코칭 신청 내역이 없습니다.</p>
           )}
         </div>
       </div>

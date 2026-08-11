@@ -91,7 +91,7 @@ export async function DELETE(
   } catch (e: unknown) {
     if ((e as { code?: string }).code === "23503") {
       return NextResponse.json(
-        { error: "이 회원에게 연결된 주문이 있어 삭제할 수 없습니다." },
+        { error: "이 회원에게 연결된 주문 또는 코칭 신청이 있어 삭제할 수 없습니다." },
         { status: 409 }
       );
     }

@@ -62,12 +62,20 @@ export default function GoodsPage() {
               <div className="sm:text-right">
                 <p className="text-2xl font-bold text-brand-green mb-1">상담 후 안내</p>
                 <p className="text-xs text-brand-muted mb-6">6주 과정</p>
-                <Link
-                  href="/contact"
-                  className="bg-brand-green text-white font-semibold px-6 py-3 rounded-lg hover:bg-green-800 transition-colors inline-flex items-center gap-2"
-                >
-                  상담 신청 <ArrowRight size={16} />
-                </Link>
+                <div className="flex flex-col gap-2">
+                  <Link
+                    href="/contact"
+                    className="bg-brand-green text-white font-semibold px-6 py-3 rounded-lg hover:bg-green-800 transition-colors inline-flex items-center justify-center gap-2"
+                  >
+                    상담 신청 <ArrowRight size={16} />
+                  </Link>
+                  <Link
+                    href="/goods/ebook"
+                    className="text-sm font-medium text-brand-green hover:underline inline-flex items-center justify-center gap-1"
+                  >
+                    자세히 보기 <ArrowRight size={14} />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -98,12 +106,20 @@ export default function GoodsPage() {
               <div className="sm:text-right">
                 <p className="text-2xl font-bold text-brand-green mb-1">상담 후 안내</p>
                 <p className="text-xs text-brand-muted mb-6">5개월 과정</p>
-                <Link
-                  href="/contact"
-                  className="bg-brand-green text-white font-semibold px-6 py-3 rounded-lg hover:bg-green-800 transition-colors inline-flex items-center gap-2"
-                >
-                  상담 신청 <ArrowRight size={16} />
-                </Link>
+                <div className="flex flex-col gap-2">
+                  <Link
+                    href="/contact"
+                    className="bg-brand-green text-white font-semibold px-6 py-3 rounded-lg hover:bg-green-800 transition-colors inline-flex items-center justify-center gap-2"
+                  >
+                    상담 신청 <ArrowRight size={16} />
+                  </Link>
+                  <Link
+                    href="/goods/print"
+                    className="text-sm font-medium text-brand-green hover:underline inline-flex items-center justify-center gap-1"
+                  >
+                    자세히 보기 <ArrowRight size={14} />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

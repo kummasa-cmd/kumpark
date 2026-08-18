@@ -47,7 +47,7 @@ const featuredProducts = [
       "1대1 맞춤 코칭으로 나만의 전자책을 완성합니다. 기획, 초고, 퇴고, 출간, 마케팅을 밀착 지원합니다.",
     price: "상담 후 안내",
     period: "6주 과정",
-    href: "/goods",
+    href: "/goods/ebook",
   },
   {
     icon: BookMarked,
@@ -56,7 +56,7 @@ const featuredProducts = [
       "꿈꾸던 종이책 출간을 현실로. 주 1회 코치 + 오프라인 4회로 기획에서 투고까지 5개월 밀착 과정입니다.",
     price: "상담 후 안내",
     period: "5개월 과정",
-    href: "/goods",
+    href: "/goods/print",
   },
 ];
 
@@ -135,7 +135,7 @@ export default async function HomePage() {
                       href={product.href}
                       className="text-sm font-medium text-brand-green hover:underline inline-flex items-center gap-1"
                     >
-                      자세히 <ArrowRight size={14} />
+                      자세히 보기 <ArrowRight size={14} />
                     </Link>
                   </div>
                 </div>

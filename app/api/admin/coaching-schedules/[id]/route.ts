@@ -28,7 +28,8 @@ export async function PUT(
   }
 
   const { rows } = await pool.query(
-    `SELECT s.id, TO_CHAR(s.session_date, 'YYYY-MM-DD') AS session_date, s.session_time,
+    `SELECT s.id, s.coaching_id, s.status AS old_status,
+            TO_CHAR(s.session_date, 'YYYY-MM-DD') AS session_date, s.session_time,
             m.id AS member_id, m.name AS member_name, m.email AS member_email,
             c.product_name
      FROM coaching_schedules s
@@ -46,6 +47,13 @@ export async function PUT(
      WHERE id = $3`,
     [status, memo?.trim() || null, params.id]
   );
+
+  if (status === "completed" && schedule.old_status !== "completed") {
+    await pool.query(
+      `UPDATE coachings SET completed_count = completed_count + 1, updated_at = NOW() WHERE id = $1`,
+      [schedule.coaching_id]
+    );
+  }
 
   if (status === "confirmed" || status === "rejected") {
     sendScheduleDecisionMail(status, {

@@ -79,9 +79,12 @@ export default function ConsultationItem({ c }: { c: Consultation }) {
   return (
     <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
       {/* 요약 행 */}
-      <button
+      <div
         onClick={() => setOpen((v) => !v)}
-        className="w-full text-left px-5 py-4 flex items-start gap-4 hover:bg-gray-50 transition-colors"
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setOpen((v) => !v); }}
+        className="w-full text-left px-5 py-4 flex items-start gap-4 hover:bg-gray-50 transition-colors cursor-pointer"
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -106,12 +109,22 @@ export default function ConsultationItem({ c }: { c: Consultation }) {
             {c.status === "pending" ? "미처리" : "처리완료"}
           </span>
           <span className="text-xs text-gray-400">{c.created_at}</span>
-          <ChevronDown
-            size={14}
-            className={`text-gray-300 transition-transform ${open ? "rotate-180" : ""}`}
-          />
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={(e) => { e.stopPropagation(); handleDelete(); }}
+              disabled={loading}
+              aria-label="상담 삭제"
+              className="text-gray-300 hover:text-red-500 disabled:opacity-40 transition-colors"
+            >
+              <Trash2 size={13} />
+            </button>
+            <ChevronDown
+              size={14}
+              className={`text-gray-300 transition-transform ${open ? "rotate-180" : ""}`}
+            />
+          </div>
         </div>
-      </button>
+      </div>
 
       {/* 상세 패널 */}
       {open && (
@@ -205,13 +218,6 @@ export default function ConsultationItem({ c }: { c: Consultation }) {
             >
               <CheckCircle size={12} />
               {c.status === "pending" ? "처리완료로 변경" : "미처리로 변경"}
-            </button>
-            <button
-              onClick={handleDelete}
-              disabled={loading}
-              className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors ml-auto"
-            >
-              <Trash2 size={12} /> 삭제
             </button>
           </div>
         </div>

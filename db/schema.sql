@@ -123,7 +123,8 @@ BEGIN
   NEW.updated_at = NOW();
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql
+SET search_path = public, pg_temp;
 
 DO $$ BEGIN
   CREATE TRIGGER members_updated_at
@@ -154,3 +155,21 @@ DO $$ BEGIN
   CREATE TRIGGER posts_updated_at
     BEFORE UPDATE ON posts FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- ============================================================
+-- Row Level Security
+--
+-- The app connects directly to Postgres as the table-owning
+-- `postgres` role (see lib/db.ts), which bypasses RLS. Enabling
+-- it here only blocks Supabase's auto-generated PostgREST API
+-- (anon/authenticated roles) from accessing these tables, since
+-- no policies are defined. See db/enable-rls.sql for the full
+-- list covering tables created lazily elsewhere in the app.
+-- ============================================================
+ALTER TABLE members       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE products      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE orders        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE consultations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admins        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE boards        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE posts         ENABLE ROW LEVEL SECURITY;

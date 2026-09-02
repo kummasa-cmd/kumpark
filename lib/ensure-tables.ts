@@ -42,6 +42,7 @@ export async function ensureMemberTables() {
       updated_at TIMESTAMPTZ
     )
   `);
+  await pool.query(`ALTER TABLE member_inquiries ENABLE ROW LEVEL SECURITY`);
 }
 
 export async function ensureInquiryCategory() {
@@ -75,6 +76,7 @@ export async function ensureCoachingTable() {
   await pool.query(
     `ALTER TABLE coachings ADD COLUMN IF NOT EXISTS completed_count INTEGER NOT NULL DEFAULT 0`
   );
+  await pool.query(`ALTER TABLE coachings ENABLE ROW LEVEL SECURITY`);
 }
 
 export async function ensureCategoryTables() {
@@ -99,6 +101,7 @@ export async function ensureCategoryTables() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+  await pool.query(`ALTER TABLE board_categories ENABLE ROW LEVEL SECURITY`);
   await pool.query(`
     ALTER TABLE posts
     ADD COLUMN IF NOT EXISTS category_id INTEGER REFERENCES board_categories(id) ON DELETE SET NULL
@@ -116,6 +119,7 @@ export async function ensureCategoryTables() {
       updated_at  TIMESTAMPTZ
     )
   `);
+  await pool.query(`ALTER TABLE comments ENABLE ROW LEVEL SECURITY`);
 }
 
 export async function ensureCoachingBoard() {

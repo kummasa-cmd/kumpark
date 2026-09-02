@@ -21,6 +21,7 @@ async function ensureTable() {
       updated_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
     )
   `);
+  await pool.query(`ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY`);
 
   const entries = Object.entries(DEFAULTS);
   for (const [key, value] of entries) {

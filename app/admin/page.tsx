@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Users, ShoppingCart, MessageSquare, TrendingUp, ArrowRight } from "lucide-react";
+import { Users, ShoppingCart, MessageSquare, TrendingUp, ArrowRight, CalendarDays } from "lucide-react";
 import pool from "@/lib/db";
-import { ensureCoachingTable } from "@/lib/ensure-tables";
+import { ensureCoachingTable, ensureCoachingScheduleTable, autoCompleteCoachings } from "@/lib/ensure-tables";
 
 export const metadata: Metadata = { title: "대시보드" };
 export const dynamic = "force-dynamic";
@@ -10,7 +10,9 @@ export const dynamic = "force-dynamic";
 async function getDashboardData() {
   try {
     await ensureCoachingTable();
-    const [statsRow, recentMembers, recentConsultations, recentCoachings] = await Promise.all([
+    await ensureCoachingScheduleTable();
+    await autoCompleteCoachings();
+    const [statsRow, recentMembers, recentConsultations, recentCoachings, upcomingSchedules] = await Promise.all([
       // 통계 — 단일 쿼리로 한 번에
       pool.query(`
         SELECT
@@ -22,6 +24,7 @@ async function getDashboardData() {
            WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW()))             AS new_orders,
           (SELECT COUNT(*)::int FROM consultations WHERE status = 'pending')               AS pending_consultations,
           (SELECT COUNT(*)::int FROM consultations)                                         AS total_consultations,
+          (SELECT COUNT(*)::int FROM coaching_schedules WHERE status = 'pending')          AS pending_schedules,
           (SELECT COALESCE(SUM(amount), 0)::bigint FROM coachings
            WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW())
              AND status IN ('in_progress', 'completed'))                                   AS revenue_this_month,
@@ -58,6 +61,18 @@ async function getDashboardData() {
         ORDER BY c.created_at DESC, c.id DESC
         LIMIT 5
       `),
+
+      // 다가오는 코칭 일정 5건 (확인중/확정)
+      pool.query(`
+        SELECT s.id, TO_CHAR(s.session_date, 'YYYY-MM-DD') AS session_date, s.session_time, s.status,
+               m.name AS member_name, m.nickname AS member_nickname, c.product_name
+        FROM coaching_schedules s
+        JOIN members m ON m.id = s.member_id
+        JOIN coachings c ON c.id = s.coaching_id
+        WHERE s.session_date >= CURRENT_DATE AND s.status IN ('pending', 'confirmed')
+        ORDER BY s.session_date ASC, s.session_time ASC
+        LIMIT 5
+      `),
     ]);
 
     const s = statsRow.rows[0];
@@ -82,12 +97,14 @@ async function getDashboardData() {
         newOrders: s.new_orders,
         pendingConsultations: s.pending_consultations,
         totalConsultations: s.total_consultations,
+        pendingSchedules: s.pending_schedules,
         revenueThisMonth: thisMonth,
         revenueGrowth,
       },
       recentMembers: recentMembers.rows,
       recentConsultations: recentConsultations.rows,
       recentCoachings: recentCoachings.rows,
+      upcomingSchedules: upcomingSchedules.rows,
     };
   } catch {
     return null;
@@ -99,6 +116,12 @@ const COACHING_STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   in_progress: { label: "코칭중",   cls: "bg-blue-50 text-blue-700" },
   completed:   { label: "코칭종료", cls: "bg-green-50 text-green-700" },
   refunded:    { label: "환불",     cls: "bg-red-50 text-red-600" },
+};
+
+const SCHEDULE_STATUS_LABEL: Record<string, { label: string; cls: string }> = {
+  pending:   { label: "확인중", cls: "bg-yellow-50 text-yellow-700" },
+  confirmed: { label: "확정",   cls: "bg-green-50 text-green-700" },
+  rejected:  { label: "반려",   cls: "bg-red-50 text-red-600" },
 };
 
 export default async function AdminDashboard() {
@@ -144,6 +167,15 @@ export default async function AdminDashboard() {
           color: "text-purple-600",
           bg: "bg-purple-50",
           href: "/admin/stats/products",
+        },
+        {
+          label: "코칭일정 확인대기",
+          value: `${data.stats.pendingSchedules}건`,
+          sub: "확정/반려 처리 필요",
+          icon: CalendarDays,
+          color: "text-teal-600",
+          bg: "bg-teal-50",
+          href: "/admin/coachings/schedule",
         },
       ]
     : [];
@@ -299,6 +331,41 @@ export default async function AdminDashboard() {
           ) : (
             <p className="px-5 py-6 text-sm text-gray-400 text-center">코칭 신청 내역이 없습니다.</p>
           )}
+        </div>
+
+        {/* 다가오는 코칭 일정 */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 lg:col-span-2">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <h2 className="font-semibold text-gray-800 text-sm">다가오는 코칭 일정</h2>
+            <Link
+              href="/admin/coachings/schedule"
+              className="text-xs text-brand-green hover:underline flex items-center gap-1"
+            >
+              전체보기 <ArrowRight size={12} />
+            </Link>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {data?.upcomingSchedules.length ? (
+              data.upcomingSchedules.map((sc) => {
+                const st = SCHEDULE_STATUS_LABEL[sc.status] ?? { label: sc.status, cls: "bg-gray-100 text-gray-500" };
+                return (
+                  <div key={sc.id} className="flex items-center justify-between px-5 py-3">
+                    <div className="min-w-0 flex-1 mr-3">
+                      <p className="text-sm font-medium text-gray-800">
+                        {sc.member_name}
+                        {sc.member_nickname && <span className="text-gray-400"> ({sc.member_nickname})</span>}
+                        <span className="text-gray-400 font-normal"> · {sc.product_name}</span>
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">{sc.session_date} {sc.session_time}</p>
+                    </div>
+                    <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="px-5 py-6 text-sm text-gray-400 text-center">예정된 코칭 일정이 없습니다.</p>
+            )}
+          </div>
         </div>
       </div>
     </div>

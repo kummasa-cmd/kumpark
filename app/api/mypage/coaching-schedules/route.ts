@@ -29,6 +29,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "시간 형식이 올바르지 않습니다." }, { status: 400 });
   }
 
+  const requestedAt = new Date(`${session_date}T${session_time}:00+09:00`);
+  if (Number.isNaN(requestedAt.getTime())) {
+    return NextResponse.json({ error: "날짜 형식이 올바르지 않습니다." }, { status: 400 });
+  }
+  if (requestedAt.getTime() < Date.now() + 3 * 60 * 60 * 1000) {
+    return NextResponse.json(
+      { error: "이미 지난 시간이거나 현재로부터 3시간 이내인 시간에는 신청할 수 없습니다." },
+      { status: 400 }
+    );
+  }
+
   const { rows: coachingRows } = await pool.query(
     `SELECT id, product_name, status, session_count,
             TO_CHAR(start_date, 'YYYY-MM-DD') AS start_date,

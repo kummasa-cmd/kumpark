@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, CalendarPlus } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarPlus, X } from "lucide-react";
 
 interface CoachingOption {
   id: number;
@@ -45,6 +45,39 @@ function toDateStr(y: number, m: number, d: number) {
 function todayStr() {
   const now = new Date();
   return toDateStr(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+function CancelButton({ id }: { id: number }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
+  const handleCancel = async () => {
+    if (!confirm("신청을 취소하시겠습니까?")) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/mypage/coaching-schedules/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        router.refresh();
+      } else {
+        const json = await res.json();
+        alert(json.error ?? "취소에 실패했습니다.");
+      }
+    } catch {
+      alert("서버에 연결할 수 없습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCancel}
+      disabled={loading}
+      className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 disabled:opacity-40 transition-colors"
+    >
+      <X size={12} /> 신청 취소
+    </button>
+  );
 }
 
 export default function CoachingScheduleCalendar({
@@ -118,6 +151,13 @@ export default function CoachingScheduleCalendar({
     setError("");
     setSuccess("");
     if (!selectedDate || !coachingId) return;
+
+    const requestedAt = new Date(`${selectedDate}T${time}:00+09:00`);
+    if (requestedAt.getTime() < Date.now() + 3 * 60 * 60 * 1000) {
+      setError("이미 지난 시간이거나 현재로부터 3시간 이내인 시간에는 신청할 수 없습니다.");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/mypage/coaching-schedules", {
@@ -271,6 +311,11 @@ export default function CoachingScheduleCalendar({
                         <p className="text-xs text-gray-500 bg-gray-50 rounded px-2 py-1.5 mt-1">
                           관리자 메모: {s.admin_memo}
                         </p>
+                      )}
+                      {s.status === "pending" && (
+                        <div className="pt-1">
+                          <CancelButton id={s.id} />
+                        </div>
                       )}
                     </div>
                   );

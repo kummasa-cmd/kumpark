@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PlusCircle } from "lucide-react";
 import pool from "@/lib/db";
-import { ensureCoachingTable } from "@/lib/ensure-tables";
+import { ensureCoachingTable, autoCompleteCoachings } from "@/lib/ensure-tables";
 import CoachingDeleteButton from "@/components/admin/CoachingDeleteButton";
 import Pagination from "@/components/admin/Pagination";
 
@@ -26,6 +26,7 @@ export default async function CoachingsPage({
   searchParams: { page?: string };
 }) {
   await ensureCoachingTable();
+  await autoCompleteCoachings();
 
   const { rows: countRows } = await pool.query(`SELECT COUNT(*)::int AS count FROM coachings`);
   const total = countRows[0].count;

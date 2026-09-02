@@ -79,6 +79,43 @@ export async function ensureCoachingTable() {
   await pool.query(`ALTER TABLE coachings ENABLE ROW LEVEL SECURITY`);
 }
 
+export async function ensureCoachingScheduleTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS coaching_schedules (
+      id                SERIAL PRIMARY KEY,
+      coaching_id       INTEGER NOT NULL REFERENCES coachings(id) ON DELETE CASCADE,
+      member_id         INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+      session_date      DATE NOT NULL,
+      session_time      VARCHAR(5) NOT NULL,
+      member_memo       TEXT,
+      admin_memo        TEXT,
+      status            VARCHAR(20) NOT NULL DEFAULT 'pending',
+      reminder_sent_at  TIMESTAMPTZ,
+      decided_at        TIMESTAMPTZ,
+      created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_coaching_schedules_coaching_id ON coaching_schedules(coaching_id)`
+  );
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_coaching_schedules_member_id ON coaching_schedules(member_id)`
+  );
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_coaching_schedules_session_date ON coaching_schedules(session_date)`
+  );
+  await pool.query(`ALTER TABLE coaching_schedules ENABLE ROW LEVEL SECURITY`);
+}
+
+/** 코칭종료일이 지난 코칭중 항목을 코칭종료 상태로 자동 전환 */
+export async function autoCompleteCoachings() {
+  await pool.query(`
+    UPDATE coachings SET status = 'completed', updated_at = NOW()
+    WHERE status = 'in_progress' AND end_date IS NOT NULL AND end_date < CURRENT_DATE
+  `);
+}
+
 export async function ensureCategoryTables() {
   await pool.query(
     `ALTER TABLE boards ADD COLUMN IF NOT EXISTS user_writable BOOLEAN NOT NULL DEFAULT TRUE`

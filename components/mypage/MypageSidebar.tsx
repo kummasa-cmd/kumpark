@@ -10,6 +10,7 @@ import {
   LogOut,
   LayoutDashboard,
   BookOpen,
+  CalendarDays,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -17,6 +18,7 @@ const navItems = [
   { href: "/mypage",               label: "대시보드",      icon: LayoutDashboard, exact: true },
   { href: "/mypage/consultations", label: "상담 내역",     icon: MessageSquare },
   { href: "/mypage/coachings",     label: "코칭 내역",     icon: ClipboardList },
+  { href: "/mypage/coaching-schedule", label: "코칭 일정", icon: CalendarDays },
   { href: "/mypage/inquiry",       label: "1대1 문의",     icon: HelpCircle },
   { href: "/mypage/coaching",      label: "코칭 게시판",   icon: BookOpen, coachingOnly: true },
   { href: "/mypage/profile",       label: "회원정보 수정", icon: Settings },
@@ -42,7 +44,9 @@ export default function MypageSidebar({ memberName, showCoaching }: Props) {
   };
 
   const isActive = (item: typeof navItems[0]) =>
-    item.exact ? pathname === item.href : pathname.startsWith(item.href);
+    item.exact
+      ? pathname === item.href
+      : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
   return (
     <aside className="w-56 shrink-0">

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import pool from "@/lib/db";
 import { verifyMemberToken, MEMBER_COOKIE } from "@/lib/member-auth";
-import { ensureCoachingTable } from "@/lib/ensure-tables";
+import { ensureCoachingTable, autoCompleteCoachings } from "@/lib/ensure-tables";
 
 export const metadata: Metadata = { title: "코칭 내역" };
 export const dynamic = "force-dynamic";
@@ -24,6 +24,7 @@ export default async function MyCoachingsPage() {
   if (!member) return null;
 
   await ensureCoachingTable();
+  await autoCompleteCoachings();
 
   const { rows } = await pool.query(
     `SELECT id, book_type, category, product_name, amount, status, session_count, completed_count,

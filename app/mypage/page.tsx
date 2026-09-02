@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Link from "next/link";
-import { MessageSquare, BookOpen, HelpCircle, ArrowRight, Clock } from "lucide-react";
+import { MessageSquare, BookOpen, HelpCircle, ArrowRight, Clock, CalendarDays } from "lucide-react";
 import pool from "@/lib/db";
 import { verifyMemberToken, MEMBER_COOKIE } from "@/lib/member-auth";
-import { ensureMemberTables, ensureCoachingTable, ensureMemberColumns } from "@/lib/ensure-tables";
+import {
+  ensureMemberTables,
+  ensureCoachingTable,
+  ensureMemberColumns,
+  ensureCoachingScheduleTable,
+  autoCompleteCoachings,
+} from "@/lib/ensure-tables";
 
 export const metadata: Metadata = { title: "마이페이지" };
 export const dynamic = "force-dynamic";
@@ -18,6 +24,13 @@ const COACHING_STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   refunded:    { label: "환불",     cls: "bg-red-50 text-red-600" },
 };
 
+const SCHEDULE_STATUS_LABEL: Record<string, { label: string; cls: string }> = {
+  pending:   { label: "확인중", cls: "bg-yellow-50 text-yellow-700" },
+  confirmed: { label: "확정",   cls: "bg-green-50 text-green-700" },
+  completed: { label: "완료",   cls: "bg-blue-50 text-blue-700" },
+  rejected:  { label: "반려",   cls: "bg-red-50 text-red-600" },
+};
+
 export default async function MypageDashboard() {
   const token = cookies().get(MEMBER_COOKIE)?.value;
   const member = token ? await verifyMemberToken(token) : null;
@@ -26,8 +39,10 @@ export default async function MypageDashboard() {
   await ensureMemberTables();
   await ensureCoachingTable();
   await ensureMemberColumns();
+  await ensureCoachingScheduleTable();
+  await autoCompleteCoachings();
 
-  const [consultationsRes, coachingsRes, boardPostsRes, inquiriesRes, memberRes] = await Promise.all([
+  const [consultationsRes, coachingsRes, boardPostsRes, inquiriesRes, memberRes, upcomingSchedulesRes] = await Promise.all([
     pool.query(
       `SELECT id, subject, status, TO_CHAR(created_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD') AS created_at
        FROM consultations WHERE member_id = $1 ORDER BY created_at DESC LIMIT 3`,
@@ -54,6 +69,15 @@ export default async function MypageDashboard() {
       [member.id]
     ),
     pool.query(`SELECT coaching_yn FROM members WHERE id = $1`, [member.id]),
+    pool.query(
+      `SELECT s.id, TO_CHAR(s.session_date, 'YYYY-MM-DD') AS session_date, s.session_time, s.status, c.product_name
+       FROM coaching_schedules s
+       JOIN coachings c ON c.id = s.coaching_id
+       WHERE s.member_id = $1 AND s.session_date >= CURRENT_DATE AND s.status IN ('pending', 'confirmed')
+       ORDER BY s.session_date ASC, s.session_time ASC
+       LIMIT 3`,
+      [member.id]
+    ),
   ]);
 
   const totalCoachings = await pool.query(
@@ -62,6 +86,11 @@ export default async function MypageDashboard() {
   );
   const pendingInquiries = await pool.query(
     "SELECT COUNT(*)::int AS cnt FROM member_inquiries WHERE member_id = $1 AND status = 'pending'",
+    [member.id]
+  );
+  const upcomingSchedulesCount = await pool.query(
+    `SELECT COUNT(*)::int AS cnt FROM coaching_schedules
+     WHERE member_id = $1 AND session_date >= CURRENT_DATE AND status IN ('pending', 'confirmed')`,
     [member.id]
   );
 
@@ -92,6 +121,14 @@ export default async function MypageDashboard() {
       color: "text-yellow-600",
       bg: "bg-yellow-50",
     },
+    {
+      label: "다가오는 코칭 일정",
+      value: `${upcomingSchedulesCount.rows[0].cnt}건`,
+      icon: CalendarDays,
+      href: "/mypage/coaching-schedule",
+      color: "text-teal-600",
+      bg: "bg-teal-50",
+    },
   ];
 
   return (
@@ -102,7 +139,7 @@ export default async function MypageDashboard() {
       </div>
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {stats.map((s) => {
           const Icon = s.icon;
           return (
@@ -150,6 +187,36 @@ export default async function MypageDashboard() {
             })
           ) : (
             <p className="px-5 py-6 text-sm text-gray-400 text-center">코칭 신청 내역이 없습니다.</p>
+          )}
+        </div>
+      </div>
+
+      {/* 다가오는 코칭 일정 */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
+          <h2 className="font-semibold text-gray-800 text-sm">다가오는 코칭 일정</h2>
+          <Link href="/mypage/coaching-schedule" className="text-xs text-brand-green hover:underline flex items-center gap-1">
+            전체보기 <ArrowRight size={12} />
+          </Link>
+        </div>
+        <div className="divide-y divide-gray-50">
+          {upcomingSchedulesRes.rows.length ? (
+            upcomingSchedulesRes.rows.map((s) => {
+              const st = SCHEDULE_STATUS_LABEL[s.status] ?? { label: s.status, cls: "bg-gray-100 text-gray-500" };
+              return (
+                <div key={s.id} className="flex items-center justify-between px-5 py-3">
+                  <div className="min-w-0 flex-1 mr-3">
+                    <p className="text-sm font-medium text-gray-800 truncate">{s.product_name}</p>
+                    <p className="text-xs text-gray-400 flex items-center gap-1">
+                      <Clock size={10} /> {s.session_date} {s.session_time}
+                    </p>
+                  </div>
+                  <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
+                </div>
+              );
+            })
+          ) : (
+            <p className="px-5 py-6 text-sm text-gray-400 text-center">예정된 코칭 일정이 없습니다.</p>
           )}
         </div>
       </div>

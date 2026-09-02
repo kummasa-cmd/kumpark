@@ -21,7 +21,7 @@ interface ScheduleItem {
   product_name: string;
   session_date: string;
   session_time: string;
-  status: "pending" | "confirmed" | "rejected";
+  status: "pending" | "confirmed" | "rejected" | "completed";
   member_memo: string | null;
   admin_memo: string | null;
   created_at: string;
@@ -30,6 +30,7 @@ interface ScheduleItem {
 const STATUS_LABEL: Record<string, { label: string; cls: string; dot: string }> = {
   pending: { label: "확인중", cls: "bg-yellow-50 text-yellow-700", dot: "bg-yellow-400" },
   confirmed: { label: "확정", cls: "bg-green-50 text-green-700", dot: "bg-brand-green" },
+  completed: { label: "완료", cls: "bg-blue-50 text-blue-700", dot: "bg-blue-500" },
   rejected: { label: "반려", cls: "bg-red-50 text-red-600", dot: "bg-red-400" },
 };
 
@@ -219,9 +220,10 @@ export default function CoachingScheduleCalendar({
           })}
         </div>
 
-        <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-50 text-xs text-gray-400">
+        <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-50 text-xs text-gray-400 flex-wrap">
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-yellow-400" /> 확인중</span>
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-brand-green" /> 확정</span>
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500" /> 완료</span>
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-400" /> 반려</span>
         </div>
       </div>

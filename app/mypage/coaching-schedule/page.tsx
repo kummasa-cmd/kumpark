@@ -22,7 +22,7 @@ export default async function MyCoachingSchedulePage() {
             TO_CHAR(start_date, 'YYYY-MM-DD') AS start_date,
             TO_CHAR(end_date, 'YYYY-MM-DD') AS end_date,
             (SELECT COUNT(*)::int FROM coaching_schedules s
-              WHERE s.coaching_id = c.id AND s.status IN ('pending', 'confirmed')) AS used_count
+              WHERE s.coaching_id = c.id AND s.status IN ('pending', 'confirmed', 'completed')) AS used_count
      FROM coachings c
      WHERE member_id = $1 AND status = 'in_progress'
      ORDER BY start_date ASC`,

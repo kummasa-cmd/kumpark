@@ -11,7 +11,7 @@ async function getAdmin() {
   return verifyAdminToken(token);
 }
 
-const STATUSES = ["confirmed", "rejected"];
+const STATUSES = ["confirmed", "rejected", "completed"];
 
 export async function PUT(
   request: Request,
@@ -47,14 +47,16 @@ export async function PUT(
     [status, memo?.trim() || null, params.id]
   );
 
-  sendScheduleDecisionMail(status, {
-    memberName: schedule.member_name,
-    memberEmail: schedule.member_email,
-    productName: schedule.product_name,
-    sessionDate: schedule.session_date,
-    sessionTime: schedule.session_time,
-    memo: memo?.trim() || null,
-  }).catch((err) => console.error("[mailer] 코칭 일정 처리 메일 발송 실패:", err));
+  if (status === "confirmed" || status === "rejected") {
+    sendScheduleDecisionMail(status, {
+      memberName: schedule.member_name,
+      memberEmail: schedule.member_email,
+      productName: schedule.product_name,
+      sessionDate: schedule.session_date,
+      sessionTime: schedule.session_time,
+      memo: memo?.trim() || null,
+    }).catch((err) => console.error("[mailer] 코칭 일정 처리 메일 발송 실패:", err));
+  }
 
   return NextResponse.json({ ok: true });
 }

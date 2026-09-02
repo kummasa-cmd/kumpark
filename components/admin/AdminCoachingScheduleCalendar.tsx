@@ -2,14 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Check, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, X, CheckCheck } from "lucide-react";
 
 interface ScheduleItem {
   id: number;
   coaching_id: number;
   session_date: string;
   session_time: string;
-  status: "pending" | "confirmed" | "rejected";
+  status: "pending" | "confirmed" | "rejected" | "completed";
   member_memo: string | null;
   admin_memo: string | null;
   created_at: string;
@@ -25,6 +25,7 @@ const CATEGORY_LABEL: Record<string, string> = { group: "그룹", individual: "�
 const STATUS_LABEL: Record<string, { label: string; cls: string; dot: string }> = {
   pending: { label: "확인중", cls: "bg-yellow-50 text-yellow-700", dot: "bg-yellow-400" },
   confirmed: { label: "확정", cls: "bg-green-50 text-green-700", dot: "bg-brand-green" },
+  completed: { label: "완료", cls: "bg-blue-50 text-blue-700", dot: "bg-blue-500" },
   rejected: { label: "반려", cls: "bg-red-50 text-red-600", dot: "bg-red-400" },
 };
 
@@ -44,7 +45,7 @@ function ScheduleRow({ s }: { s: ScheduleItem }) {
   const [error, setError] = useState("");
   const st = STATUS_LABEL[s.status];
 
-  const decide = async (status: "confirmed" | "rejected") => {
+  const decide = async (status: "confirmed" | "rejected" | "completed") => {
     setError("");
     setLoading(true);
     try {
@@ -86,32 +87,59 @@ function ScheduleRow({ s }: { s: ScheduleItem }) {
         <p className="text-xs text-gray-500 bg-gray-50 rounded px-2 py-1.5">요청사항: {s.member_memo}</p>
       )}
 
-      <textarea
-        value={memo}
-        onChange={(e) => setMemo(e.target.value)}
-        rows={2}
-        placeholder="회원에게 전달할 메모 (확정/반려 메일에 포함됩니다)"
-        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-brand-green resize-none"
-      />
+      {(s.status === "pending" || s.status === "confirmed") && (
+        <textarea
+          value={memo}
+          onChange={(e) => setMemo(e.target.value)}
+          rows={2}
+          placeholder={
+            s.status === "confirmed"
+              ? "완료 메모 (회원에게 보이며, 완료 처리 시 이메일은 발송되지 않습니다)"
+              : "회원에게 전달할 메모 (확정/반려 메일에 포함됩니다)"
+          }
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-brand-green resize-none"
+        />
+      )}
 
       {error && <p className="text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
 
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => decide("confirmed")}
-          disabled={loading}
-          className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs bg-brand-green text-white px-3 py-1.5 rounded-lg hover:bg-green-800 disabled:opacity-50 transition-colors"
-        >
-          <Check size={12} /> 확정
-        </button>
-        <button
-          onClick={() => decide("rejected")}
-          disabled={loading}
-          className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs border border-red-200 text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors"
-        >
-          <X size={12} /> 반려
-        </button>
-      </div>
+      {s.status === "pending" && (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => decide("confirmed")}
+            disabled={loading}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs bg-brand-green text-white px-3 py-1.5 rounded-lg hover:bg-green-800 disabled:opacity-50 transition-colors"
+          >
+            <Check size={12} /> 확정
+          </button>
+          <button
+            onClick={() => decide("rejected")}
+            disabled={loading}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs border border-red-200 text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors"
+          >
+            <X size={12} /> 반려
+          </button>
+        </div>
+      )}
+
+      {s.status === "confirmed" && (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => decide("completed")}
+            disabled={loading}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          >
+            <CheckCheck size={12} /> 완료 처리
+          </button>
+          <button
+            onClick={() => decide("rejected")}
+            disabled={loading}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs border border-red-200 text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors"
+          >
+            <X size={12} /> 반려
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -215,9 +243,10 @@ export default function AdminCoachingScheduleCalendar({ schedules }: { schedules
           })}
         </div>
 
-        <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-50 text-xs text-gray-400">
+        <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-50 text-xs text-gray-400 flex-wrap">
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-yellow-400" /> 확인중</span>
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-brand-green" /> 확정</span>
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500" /> 완료</span>
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-400" /> 반려</span>
         </div>
       </div>

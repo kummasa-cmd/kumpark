@@ -53,7 +53,7 @@ export async function POST(request: Request) {
 
   const { rows: countRows } = await pool.query(
     `SELECT COUNT(*)::int AS count FROM coaching_schedules
-     WHERE coaching_id = $1 AND status IN ('pending', 'confirmed')`,
+     WHERE coaching_id = $1 AND status IN ('pending', 'confirmed', 'completed')`,
     [coaching_id]
   );
   if (countRows[0].count >= coaching.session_count) {

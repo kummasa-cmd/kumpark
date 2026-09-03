@@ -58,6 +58,7 @@ const menuConfig: MenuItem[] = [
       { label: "코칭등록", href: "/admin/coachings/new" },
       { label: "코칭일정", href: "/admin/coachings/schedule" },
       { label: "코칭 게시판", href: "/admin/coachings/board" },
+      { label: "코칭설정", href: "/admin/coachings/settings" },
     ],
   },
   {

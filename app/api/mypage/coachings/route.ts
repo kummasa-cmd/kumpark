@@ -15,7 +15,7 @@ async function getMe() {
 const BOOK_TYPES = ["ebook", "paper"] as const;
 const BOOK_TYPE_LABEL: Record<string, string> = { ebook: "전자책", paper: "종이책" };
 const PRODUCT_NAME: Record<string, string> = { ebook: "전자책 코칭", paper: "종이책 코칭" };
-const SESSION_COUNT = 3;
+const SESSION_COUNT: Record<string, number> = { ebook: 3, paper: 15 };
 
 export async function POST(request: Request) {
   const me = await getMe();
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
       book_type,
       productName,
       amount,
-      SESSION_COUNT,
+      SESSION_COUNT[book_type],
       desired_start_date,
       String(depositor_bank).trim(),
       String(depositor_account).trim(),

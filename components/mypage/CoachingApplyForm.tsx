@@ -16,14 +16,30 @@ type FormData = {
   deposit_due_date: string;
 };
 
-function getNoticeItems(duration: string) {
-  return [
+function getNoticeItems(bookType: BookType, duration: string) {
+  const common = [
     `코칭기간: ${duration || "관리자 문의"}`,
+    "신청 후 3일 이내 입금해주셔야 합니다.",
+    "세금계산서 또는 현금영수증 발행이 가능합니다.",
+  ];
+
+  if (bookType === "paper") {
+    return [
+      common[0],
+      "진행방식: 직접만남/온라인줌/전화 코칭",
+      "코칭횟수: 총 15회",
+      common[1],
+      common[2],
+    ];
+  }
+
+  return [
+    common[0],
     "진행방식: 온라인 줌 또는 전화 코칭",
     "코칭횟수: 총 3회",
     "강의 동영상 4개 시청 가능",
-    "신청 후 3일 이내 입금해주셔야 합니다.",
-    "세금계산서 또는 현금영수증 발행이 가능합니다.",
+    common[1],
+    common[2],
   ];
 }
 
@@ -129,7 +145,7 @@ export default function CoachingApplyForm({
       <div className="bg-green-50 border border-green-100 rounded-xl p-5">
         <h2 className="text-sm font-semibold text-brand-green mb-3">신청 전 안내사항</h2>
         <ul className="space-y-1.5 mb-4">
-          {getNoticeItems(duration).map((item) => (
+          {getNoticeItems(bookType, duration).map((item) => (
             <li key={item} className="flex items-start gap-2 text-sm text-gray-700">
               <CheckCircle2 size={15} className="text-brand-green shrink-0 mt-0.5" />
               {item}

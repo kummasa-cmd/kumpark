@@ -114,12 +114,6 @@ export default function Header({ memberName }: HeaderProps) {
               >
                 로그인
               </Link>
-              <Link
-                href="/contact"
-                className="bg-brand-green text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-green-800 transition-colors"
-              >
-                코칭 신청
-              </Link>
             </div>
           )}
         </nav>
@@ -205,22 +199,13 @@ export default function Header({ memberName }: HeaderProps) {
               </button>
             </>
           ) : (
-            <>
-              <Link
-                href="/login"
-                className="text-sm font-medium py-1 text-brand-text hover:text-brand-green"
-                onClick={() => setMenuOpen(false)}
-              >
-                로그인
-              </Link>
-              <Link
-                href="/contact"
-                className="bg-brand-green text-white text-sm font-medium px-4 py-2 rounded-md text-center hover:bg-green-800 transition-colors"
-                onClick={() => setMenuOpen(false)}
-              >
-                코칭 신청
-              </Link>
-            </>
+            <Link
+              href="/login"
+              className="text-sm font-medium py-1 text-brand-text hover:text-brand-green"
+              onClick={() => setMenuOpen(false)}
+            >
+              로그인
+            </Link>
           )}
         </div>
       )}

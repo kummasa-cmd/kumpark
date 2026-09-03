@@ -76,6 +76,12 @@ export async function ensureCoachingTable() {
   await pool.query(
     `ALTER TABLE coachings ADD COLUMN IF NOT EXISTS completed_count INTEGER NOT NULL DEFAULT 0`
   );
+  // 회원 신청 시 입력하는 정보 (관리자가 수동 등록하는 코칭에는 비어 있을 수 있음)
+  await pool.query(`ALTER TABLE coachings ADD COLUMN IF NOT EXISTS desired_start_date DATE`);
+  await pool.query(`ALTER TABLE coachings ADD COLUMN IF NOT EXISTS depositor_bank VARCHAR(100)`);
+  await pool.query(`ALTER TABLE coachings ADD COLUMN IF NOT EXISTS depositor_account VARCHAR(100)`);
+  await pool.query(`ALTER TABLE coachings ADD COLUMN IF NOT EXISTS depositor_name VARCHAR(100)`);
+  await pool.query(`ALTER TABLE coachings ADD COLUMN IF NOT EXISTS deposit_due_date DATE`);
   await pool.query(`ALTER TABLE coachings ENABLE ROW LEVEL SECURITY`);
 }
 

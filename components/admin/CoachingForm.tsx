@@ -32,6 +32,11 @@ type Coaching = {
   session_count: number;
   completed_count: number;
   status: string;
+  desired_start_date?: string | null;
+  depositor_bank?: string | null;
+  depositor_account?: string | null;
+  depositor_name?: string | null;
+  deposit_due_date?: string | null;
 };
 
 const inputClass =
@@ -130,8 +135,46 @@ export default function CoachingForm({ coaching }: { coaching?: Coaching }) {
     }
   };
 
+  const hasApplicationInfo =
+    isEdit &&
+    (coaching!.desired_start_date ||
+      coaching!.depositor_bank ||
+      coaching!.depositor_account ||
+      coaching!.depositor_name ||
+      coaching!.deposit_due_date);
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {hasApplicationInfo && (
+        <div className="bg-amber-50 rounded-xl border border-amber-100 p-6 space-y-3">
+          <h2 className="text-sm font-semibold text-amber-700 border-b border-amber-100 pb-3">
+            회원 신청 정보 (읽기 전용)
+          </h2>
+          <div className="grid sm:grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-gray-500">희망 코칭 시작일</p>
+              <p className="font-medium text-gray-800">{coaching!.desired_start_date || "-"}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">입금 예정일</p>
+              <p className="font-medium text-gray-800">{coaching!.deposit_due_date || "-"}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">이체 은행명</p>
+              <p className="font-medium text-gray-800">{coaching!.depositor_bank || "-"}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">계좌번호</p>
+              <p className="font-medium text-gray-800">{coaching!.depositor_account || "-"}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">입금인명</p>
+              <p className="font-medium text-gray-800">{coaching!.depositor_name || "-"}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
         <h2 className="text-sm font-semibold text-gray-700 border-b border-gray-100 pb-3">회원 선택</h2>
         <div>

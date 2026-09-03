@@ -21,6 +21,9 @@ export default async function CoachingEditPage({
             TO_CHAR(c.start_date, 'YYYY-MM-DD') AS start_date,
             TO_CHAR(c.end_date, 'YYYY-MM-DD') AS end_date,
             c.session_count, c.completed_count, c.status,
+            TO_CHAR(c.desired_start_date, 'YYYY-MM-DD') AS desired_start_date,
+            c.depositor_bank, c.depositor_account, c.depositor_name,
+            TO_CHAR(c.deposit_due_date, 'YYYY-MM-DD') AS deposit_due_date,
             m.name AS member_name, m.nickname AS member_nickname, m.phone AS member_phone
      FROM coachings c
      JOIN members m ON m.id = c.member_id

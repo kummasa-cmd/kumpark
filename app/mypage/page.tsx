@@ -171,7 +171,11 @@ export default async function MypageDashboard() {
             coachingsRes.rows.map((c) => {
               const st = COACHING_STATUS_LABEL[c.status] ?? { label: c.status, cls: "bg-gray-100 text-gray-500" };
               return (
-                <div key={c.id} className="flex items-center justify-between px-5 py-3">
+                <Link
+                  key={c.id}
+                  href={`/mypage/coachings/${c.id}`}
+                  className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors"
+                >
                   <div className="min-w-0 flex-1 mr-3">
                     <p className="text-sm font-medium text-gray-800 truncate">{c.product_name}</p>
                     <p className="text-xs text-gray-400">
@@ -182,7 +186,7 @@ export default async function MypageDashboard() {
                     <p className="text-xs text-gray-400">{c.completed_count}/{c.session_count}회</p>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
                   </div>
-                </div>
+                </Link>
               );
             })
           ) : (

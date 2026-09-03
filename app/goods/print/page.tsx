@@ -158,16 +158,16 @@ export default function PrintCoachingPage() {
           </div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/contact"
+              href="/mypage/coaching/apply/paper"
               className="bg-brand-green text-white font-semibold px-8 py-3 rounded-lg hover:bg-green-800 transition-colors inline-flex items-center justify-center gap-2"
             >
-              1대1 종이책 코칭 신청 <ArrowRight size={18} />
+              종이책 코칭 신청 <ArrowRight size={18} />
             </Link>
             <Link
               href="/contact"
               className="border border-gray-300 text-brand-text font-semibold px-8 py-3 rounded-lg hover:border-brand-green hover:text-brand-green transition-colors inline-flex items-center justify-center"
             >
-              검파크에서 일정 확인하기
+              무료상담 문의
             </Link>
           </div>
         </div>
@@ -453,16 +453,16 @@ export default function PrintCoachingPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/contact"
+              href="/mypage/coaching/apply/paper"
               className="bg-brand-green text-white font-semibold px-8 py-3 rounded-lg hover:bg-green-800 transition-colors inline-flex items-center justify-center gap-2"
             >
-              1대1 종이책 코칭 신청 <ArrowRight size={18} />
+              종이책 코칭 신청 <ArrowRight size={18} />
             </Link>
             <Link
               href="/contact"
               className="border border-gray-300 text-brand-text font-semibold px-8 py-3 rounded-lg hover:border-brand-green hover:text-brand-green transition-colors inline-flex items-center justify-center"
             >
-              검파크에서 일정 확인하기
+              무료상담 문의
             </Link>
           </div>
         </div>

@@ -61,7 +61,11 @@ export default async function MyCoachingsPage() {
           {rows.map((c) => {
             const st = STATUS_LABEL[c.status] ?? { label: c.status, cls: "bg-gray-100 text-gray-500" };
             return (
-              <div key={c.id} className="bg-white rounded-xl border border-gray-100 p-5">
+              <Link
+                key={c.id}
+                href={`/mypage/coachings/${c.id}`}
+                className="block bg-white rounded-xl border border-gray-100 p-5 hover:border-brand-green transition-colors"
+              >
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div>
                     <p className="font-semibold text-gray-800">{c.product_name}</p>
@@ -83,7 +87,7 @@ export default async function MyCoachingsPage() {
                   <span>{c.start_date ?? "-"} ~ {c.end_date ?? "-"}</span>
                   <span>신청일 {c.created_at}</span>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>

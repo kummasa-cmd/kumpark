@@ -425,6 +425,55 @@ export async function sendCoachingApplicationAlert(data: CoachingApplicationMail
   });
 }
 
+export interface PasswordResetMailData {
+  toName: string;
+  toEmail: string;
+  resetUrl: string;
+}
+
+export async function sendPasswordResetMail(data: PasswordResetMailData) {
+  const from = process.env.SMTP_FROM ?? process.env.SMTP_USER;
+
+  await createTransporter().sendMail({
+    from: `"검파크 알림" <${from}>`,
+    to: data.toEmail,
+    subject: `[검파크] 비밀번호 재설정 안내`,
+    html: `
+<!DOCTYPE html>
+<html lang="ko">
+<head><meta charset="UTF-8"></head>
+<body style="font-family:'Apple SD Gothic Neo','맑은 고딕',sans-serif;background:#f9fafb;margin:0;padding:24px;">
+  <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+    <div style="background:#0B7903;padding:24px 28px;">
+      <p style="margin:0;color:#fff;font-size:18px;font-weight:700;">🔒 비밀번호 재설정 안내</p>
+      <p style="margin:4px 0 0;color:#bbf7d0;font-size:13px;">1시간 이내에 아래 링크로 새 비밀번호를 설정해 주세요.</p>
+    </div>
+    <div style="padding:28px;">
+      <p style="margin:0 0 20px;font-size:14px;color:#374151;">
+        안녕하세요, <strong>${escHtml(data.toName)}</strong>님.<br>
+        비밀번호 재설정을 요청하셨습니다. 본인이 요청하지 않았다면 이 메일을 무시하셔도 됩니다.
+      </p>
+      <a href="${data.resetUrl}"
+         style="display:inline-block;background:#0B7903;color:#fff;font-size:14px;font-weight:600;padding:12px 24px;border-radius:8px;text-decoration:none;">
+        새 비밀번호 설정하기 →
+      </a>
+      <p style="margin:20px 0 0;font-size:12px;color:#9ca3af;word-break:break-all;">
+        버튼이 동작하지 않으면 아래 링크를 브라우저에 붙여넣어 주세요.<br>${data.resetUrl}
+      </p>
+    </div>
+    <div style="background:#f9fafb;padding:16px 28px;border-top:1px solid #e5e7eb;">
+      <p style="margin:0;font-size:11px;color:#9ca3af;">
+        kumpark | 기록이 모여 브랜드가 되는 공간<br>
+        서울시 금천구 범안로 1130. 3층 302호 (가산동, 디지털 엠파이어 빌딩)
+      </p>
+    </div>
+  </div>
+</body>
+</html>`,
+    text: `${data.toName}님, 안녕하세요.\n비밀번호 재설정을 요청하셨습니다. 1시간 이내에 아래 링크에서 새 비밀번호를 설정해 주세요.\n\n${data.resetUrl}\n\n본인이 요청하지 않았다면 이 메일을 무시하셔도 됩니다.`,
+  });
+}
+
 function escHtml(str: string): string {
   return str
     .replace(/&/g, "&amp;")

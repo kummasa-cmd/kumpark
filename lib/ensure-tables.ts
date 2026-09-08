@@ -165,6 +165,26 @@ export async function ensureCategoryTables() {
   await pool.query(`ALTER TABLE comments ENABLE ROW LEVEL SECURITY`);
 }
 
+export async function ensurePasswordResetTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS password_resets (
+      id         SERIAL PRIMARY KEY,
+      member_id  INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+      token_hash VARCHAR(255) NOT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
+      used_at    TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_password_resets_member_id ON password_resets(member_id)`
+  );
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_password_resets_token_hash ON password_resets(token_hash)`
+  );
+  await pool.query(`ALTER TABLE password_resets ENABLE ROW LEVEL SECURITY`);
+}
+
 export async function ensureCoachingBoard() {
   await pool.query(`
     INSERT INTO boards (name, slug, board_type, user_writable, use_comment, use_category, is_visible, sort_order)

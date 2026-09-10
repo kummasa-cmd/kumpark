@@ -1,11 +1,22 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import pool from "@/lib/db";
+import { verifyAdminToken, COOKIE_NAME } from "@/lib/auth";
 import { ensurePostAdminReply } from "@/lib/ensure-tables";
+
+async function requireAdmin() {
+  const token = cookies().get(COOKIE_NAME)?.value;
+  return token ? await verifyAdminToken(token) : null;
+}
 
 export async function GET(
   _req: Request,
   { params }: { params: { postId: string } }
 ) {
+  if (!(await requireAdmin())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { rows } = await pool.query(
     `SELECT id, board_id, title, author_name, content, is_notice, category_id,
             TO_CHAR(created_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD') AS created_at
@@ -20,6 +31,10 @@ export async function PUT(
   req: Request,
   { params }: { params: { postId: string } }
 ) {
+  if (!(await requireAdmin())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { title, author_name, content, is_notice, created_at, category_id } = await req.json();
 
   if (!title || !author_name || !content) {
@@ -44,6 +59,10 @@ export async function PATCH(
   req: Request,
   { params }: { params: { postId: string } }
 ) {
+  if (!(await requireAdmin())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   await ensurePostAdminReply();
   const { reply } = await req.json();
   if (!reply?.trim()) {
@@ -61,6 +80,10 @@ export async function DELETE(
   _req: Request,
   { params }: { params: { postId: string } }
 ) {
+  if (!(await requireAdmin())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { rowCount } = await pool.query(
     `DELETE FROM posts WHERE id = $1`,
     [params.postId]

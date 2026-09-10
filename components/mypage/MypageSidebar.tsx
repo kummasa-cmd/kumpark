@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   BookOpen,
   CalendarDays,
+  FolderOpen,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -21,6 +22,7 @@ const navItems = [
   { href: "/mypage/coaching-schedule", label: "코칭 일정", icon: CalendarDays },
   { href: "/mypage/inquiry",       label: "1대1 문의",     icon: HelpCircle },
   { href: "/mypage/coaching",      label: "코칭 게시판",   icon: BookOpen, coachingOnly: true },
+  { href: "/mypage/materials",     label: "코칭 자료실",   icon: FolderOpen, coachingOnly: true },
   { href: "/mypage/profile",       label: "회원정보 수정", icon: Settings },
 ];
 

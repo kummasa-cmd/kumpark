@@ -193,3 +193,55 @@ export async function ensureCoachingBoard() {
     WHERE NOT EXISTS (SELECT 1 FROM boards WHERE slug = 'coaching')
   `);
 }
+
+/** 코칭 자료실: 관리자만 작성 가능, 코칭 신청 회원만 열람 가능한 비공개 게시판 */
+export async function ensureCoachingMaterialsBoard() {
+  await pool.query(`
+    INSERT INTO boards (name, slug, board_type, user_writable, use_comment, use_category, is_visible, sort_order)
+    SELECT '코칭 자료실', 'coaching-materials', 'general', FALSE, FALSE, TRUE, FALSE,
+           COALESCE((SELECT MAX(sort_order) FROM boards), 0) + 1
+    WHERE NOT EXISTS (SELECT 1 FROM boards WHERE slug = 'coaching-materials')
+  `);
+}
+
+/** 코칭 자료실 분류: 전자책 / 종이책 / 모두 중 고정 선택 (관리자가 임의로 추가·삭제하지 않는 고정값) */
+export async function ensureCoachingMaterialCategories() {
+  const { rows: boardRows } = await pool.query(
+    `SELECT id FROM boards WHERE slug = 'coaching-materials'`
+  );
+  const boardId = boardRows[0]?.id;
+  if (!boardId) return;
+
+  const fixed = [
+    { name: "전자책", sort_order: 1 },
+    { name: "종이책", sort_order: 2 },
+    { name: "모두", sort_order: 3 },
+  ];
+  for (const c of fixed) {
+    await pool.query(
+      `INSERT INTO board_categories (board_id, name, sort_order)
+       SELECT $1::integer, $2::varchar, $3::integer
+       WHERE NOT EXISTS (SELECT 1 FROM board_categories WHERE board_id = $1::integer AND name = $2::varchar)`,
+      [boardId, c.name, c.sort_order]
+    );
+  }
+}
+
+export async function ensurePostAttachmentsTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS post_attachments (
+      id             SERIAL PRIMARY KEY,
+      post_id        INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+      file_name      VARCHAR(255) NOT NULL,
+      file_size      BIGINT NOT NULL,
+      mime_type      VARCHAR(150),
+      file_data      BYTEA NOT NULL,
+      download_count INTEGER NOT NULL DEFAULT 0,
+      created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_post_attachments_post_id ON post_attachments(post_id)`
+  );
+  await pool.query(`ALTER TABLE post_attachments ENABLE ROW LEVEL SECURITY`);
+}

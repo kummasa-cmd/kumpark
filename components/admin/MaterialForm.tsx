@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import dynamic from "next/dynamic";
+import { upload } from "@vercel/blob/client";
 import { Paperclip, X } from "lucide-react";
 
 const RichEditor = dynamic(() => import("./RichEditor"), { ssr: false });
@@ -30,7 +31,7 @@ function formatSize(bytes: number) {
   return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
 }
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // keep in sync with app/api/admin/materials/[postId]/attachments/route.ts
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // keep in sync with app/api/admin/materials/[postId]/attachments/token/route.ts
 
 export default function MaterialForm({
   categories,
@@ -48,6 +49,7 @@ export default function MaterialForm({
   const [attachments, setAttachments] = useState<Attachment[]>(initialAttachments);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [removingId, setRemovingId] = useState<number | null>(null);
+  const [uploadStatus, setUploadStatus] = useState("");
 
   const { register, handleSubmit, control, formState: { errors } } = useForm<FormData>({
     defaultValues: isEdit
@@ -126,26 +128,50 @@ export default function MaterialForm({
 
       const postId = isEdit ? post.id : json.id;
 
-      // Upload one file per request: bundling several files into a single
-      // multipart body can exceed Vercel's request size limit even when
-      // each file is individually under the per-file cap.
-      for (const f of newFiles) {
-        const fd = new FormData();
-        fd.append("files", f);
-        const upRes = await fetch(`/api/admin/materials/${postId}/attachments`, {
-          method: "POST",
-          body: fd,
-        });
-        if (!upRes.ok) {
-          const message = await upRes
-            .json()
-            .then((j) => j.error as string | undefined)
-            .catch(() => undefined);
-          setError(message ?? `첨부파일 업로드에 실패했습니다: ${f.name}`);
+      // Each file uploads straight from the browser to Blob storage (bypassing
+      // our serverless function entirely), then we record its metadata with a
+      // small JSON call — this avoids Vercel's request body size limit, which
+      // sending the file through our own API would hit.
+      for (let i = 0; i < newFiles.length; i++) {
+        const f = newFiles[i];
+        setUploadStatus(`첨부파일 업로드 중... (${i + 1}/${newFiles.length})`);
+        try {
+          const ext = f.name.includes(".") ? f.name.split(".").pop() : "";
+          const pathname = `materials/${postId}/${crypto.randomUUID()}${ext ? `.${ext}` : ""}`;
+          const blob = await upload(pathname, f, {
+            access: "private",
+            handleUploadUrl: `/api/admin/materials/${postId}/attachments/token`,
+          });
+
+          const metaRes = await fetch(`/api/admin/materials/${postId}/attachments`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              url: blob.url,
+              pathname: blob.pathname,
+              fileName: f.name,
+              fileSize: f.size,
+              mimeType: f.type,
+            }),
+          });
+          if (!metaRes.ok) {
+            const message = await metaRes
+              .json()
+              .then((j) => j.error as string | undefined)
+              .catch(() => undefined);
+            setError(message ?? `첨부파일 업로드에 실패했습니다: ${f.name}`);
+            setLoading(false);
+            setUploadStatus("");
+            return;
+          }
+        } catch (err) {
+          setError(err instanceof Error ? err.message : `첨부파일 업로드에 실패했습니다: ${f.name}`);
           setLoading(false);
+          setUploadStatus("");
           return;
         }
       }
+      setUploadStatus("");
 
       router.push(`/admin/coachings/materials/${postId}`);
       router.refresh();
@@ -279,7 +305,7 @@ export default function MaterialForm({
           disabled={loading}
           className="bg-brand-green text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-green-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {loading ? "처리 중..." : isEdit ? "수정하기" : "자료 등록"}
+          {uploadStatus || (loading ? "처리 중..." : isEdit ? "수정하기" : "자료 등록")}
         </button>
         <button
           type="button"

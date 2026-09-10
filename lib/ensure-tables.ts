@@ -227,6 +227,12 @@ export async function ensureCoachingMaterialCategories() {
   }
 }
 
+/**
+ * Attachment bytes live in Vercel Blob (blob_url/blob_pathname), not in Postgres:
+ * uploading through our serverless function would hit Vercel's request body
+ * size limit. file_data is kept nullable only for backward compatibility with
+ * rows written before the Blob migration.
+ */
 export async function ensurePostAttachmentsTable() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS post_attachments (
@@ -235,7 +241,9 @@ export async function ensurePostAttachmentsTable() {
       file_name      VARCHAR(255) NOT NULL,
       file_size      BIGINT NOT NULL,
       mime_type      VARCHAR(150),
-      file_data      BYTEA NOT NULL,
+      file_data      BYTEA,
+      blob_url       TEXT,
+      blob_pathname  TEXT,
       download_count INTEGER NOT NULL DEFAULT 0,
       created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
@@ -244,4 +252,7 @@ export async function ensurePostAttachmentsTable() {
     `CREATE INDEX IF NOT EXISTS idx_post_attachments_post_id ON post_attachments(post_id)`
   );
   await pool.query(`ALTER TABLE post_attachments ENABLE ROW LEVEL SECURITY`);
+  await pool.query(`ALTER TABLE post_attachments ADD COLUMN IF NOT EXISTS blob_url TEXT`);
+  await pool.query(`ALTER TABLE post_attachments ADD COLUMN IF NOT EXISTS blob_pathname TEXT`);
+  await pool.query(`ALTER TABLE post_attachments ALTER COLUMN file_data DROP NOT NULL`);
 }

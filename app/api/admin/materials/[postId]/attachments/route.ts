@@ -4,7 +4,9 @@ import pool from "@/lib/db";
 import { verifyAdminToken, COOKIE_NAME } from "@/lib/auth";
 import { ensurePostAttachmentsTable } from "@/lib/ensure-tables";
 
-const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+// Vercel rejects request bodies above ~4.5MB before they reach the function
+// (returns a non-JSON 413), so keep uploads safely under that per request.
+const MAX_SIZE = 4 * 1024 * 1024; // 4MB
 const ALLOWED_EXT = [
   "pdf", "doc", "docx", "hwp", "hwpx", "ppt", "pptx", "xls", "xlsx",
   "zip", "jpg", "jpeg", "png", "gif", "txt",
@@ -46,7 +48,7 @@ export async function POST(
     }
     if (file.size > MAX_SIZE) {
       return NextResponse.json(
-        { error: `파일 크기는 10MB 이하여야 합니다: ${file.name}` },
+        { error: `파일 크기는 4MB 이하여야 합니다: ${file.name}` },
         { status: 400 }
       );
     }

@@ -30,6 +30,8 @@ function formatSize(bytes: number) {
   return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
 }
 
+const MAX_FILE_SIZE = 4 * 1024 * 1024; // keep in sync with app/api/admin/materials/[postId]/attachments/route.ts
+
 export default function MaterialForm({
   categories,
   post,
@@ -59,7 +61,14 @@ export default function MaterialForm({
 
   const handleFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const picked = Array.from(e.target.files ?? []);
-    setNewFiles((prev) => [...prev, ...picked]);
+    const tooBig = picked.filter((f) => f.size > MAX_FILE_SIZE);
+    if (tooBig.length > 0) {
+      alert(
+        `파일 크기는 4MB 이하여야 합니다: ${tooBig.map((f) => f.name).join(", ")}`
+      );
+    }
+    const ok = picked.filter((f) => f.size <= MAX_FILE_SIZE);
+    setNewFiles((prev) => [...prev, ...ok]);
     e.target.value = "";
   };
 
@@ -117,16 +126,22 @@ export default function MaterialForm({
 
       const postId = isEdit ? post.id : json.id;
 
-      if (newFiles.length > 0) {
+      // Upload one file per request: bundling several files into a single
+      // multipart body can exceed Vercel's request size limit even when
+      // each file is individually under the per-file cap.
+      for (const f of newFiles) {
         const fd = new FormData();
-        newFiles.forEach((f) => fd.append("files", f));
+        fd.append("files", f);
         const upRes = await fetch(`/api/admin/materials/${postId}/attachments`, {
           method: "POST",
           body: fd,
         });
         if (!upRes.ok) {
-          const j = await upRes.json();
-          setError(j.error ?? "첨부파일 업로드에 실패했습니다.");
+          const message = await upRes
+            .json()
+            .then((j) => j.error as string | undefined)
+            .catch(() => undefined);
+          setError(message ?? `첨부파일 업로드에 실패했습니다: ${f.name}`);
           setLoading(false);
           return;
         }
@@ -196,7 +211,7 @@ export default function MaterialForm({
         <label className="block text-sm font-medium text-gray-700">
           첨부파일
           <span className="ml-2 text-xs text-gray-400 font-normal">
-            PDF·문서·이미지·압축파일 (개당 10MB 이하)
+            PDF·문서·이미지·압축파일 (개당 4MB 이하)
           </span>
         </label>
 

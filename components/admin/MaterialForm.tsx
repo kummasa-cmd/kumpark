@@ -30,7 +30,7 @@ function formatSize(bytes: number) {
   return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
 }
 
-const MAX_FILE_SIZE = 4 * 1024 * 1024; // keep in sync with app/api/admin/materials/[postId]/attachments/route.ts
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // keep in sync with app/api/admin/materials/[postId]/attachments/route.ts
 
 export default function MaterialForm({
   categories,
@@ -64,7 +64,7 @@ export default function MaterialForm({
     const tooBig = picked.filter((f) => f.size > MAX_FILE_SIZE);
     if (tooBig.length > 0) {
       alert(
-        `파일 크기는 4MB 이하여야 합니다: ${tooBig.map((f) => f.name).join(", ")}`
+        `파일 크기는 10MB 이하여야 합니다: ${tooBig.map((f) => f.name).join(", ")}`
       );
     }
     const ok = picked.filter((f) => f.size <= MAX_FILE_SIZE);
@@ -211,7 +211,7 @@ export default function MaterialForm({
         <label className="block text-sm font-medium text-gray-700">
           첨부파일
           <span className="ml-2 text-xs text-gray-400 font-normal">
-            PDF·문서·이미지·압축파일 (개당 4MB 이하)
+            PDF·문서·이미지·압축파일 (개당 10MB 이하)
           </span>
         </label>
 

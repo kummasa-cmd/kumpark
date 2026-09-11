@@ -6,7 +6,6 @@ import { useState } from "react";
 import {
   LayoutDashboard,
   Users,
-  Package,
   ShoppingCart,
   MessageSquare,
   BarChart2,
@@ -38,15 +37,6 @@ const menuConfig: MenuItem[] = [
     children: [
       { label: "회원목록", href: "/admin/members" },
       { label: "회원등록", href: "/admin/members/new" },
-    ],
-  },
-  {
-    id: "products",
-    label: "상품관리",
-    icon: Package,
-    children: [
-      { label: "상품목록", href: "/admin/products" },
-      { label: "상품등록", href: "/admin/products/new" },
     ],
   },
   {

@@ -52,7 +52,7 @@ export async function POST(request: Request) {
   if (!coaching) {
     return NextResponse.json({ error: "존재하지 않는 코칭입니다." }, { status: 404 });
   }
-  if (coaching.status !== "in_progress") {
+  if (coaching.status !== "in_progress" && coaching.status !== "deposit_confirmed") {
     return NextResponse.json({ error: "코칭중 상태에서만 일정을 신청할 수 있습니다." }, { status: 400 });
   }
   if (session_date < coaching.start_date) {

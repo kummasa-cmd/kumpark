@@ -271,6 +271,7 @@ export default function CoachingForm({ coaching }: { coaching?: Coaching }) {
           <label className="block text-sm font-medium text-gray-700 mb-1.5">상태</label>
           <select {...register("status")} className={selectClass}>
             <option value="pending">입금대기</option>
+            <option value="deposit_confirmed">입금확인</option>
             <option value="in_progress">코칭중</option>
             <option value="completed">코칭종료</option>
             <option value="refunded">환불</option>

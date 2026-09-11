@@ -19,7 +19,7 @@ export default async function ApplyEbookCoachingPage() {
   await ensureCoachingTable();
   const { rows } = await pool.query(
     `SELECT id FROM coachings
-     WHERE member_id = $1 AND book_type = 'ebook' AND status IN ('pending', 'in_progress')
+     WHERE member_id = $1 AND book_type = 'ebook' AND status IN ('pending', 'deposit_confirmed', 'in_progress')
      LIMIT 1`,
     [member.id]
   );

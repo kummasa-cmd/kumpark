@@ -27,10 +27,10 @@ async function getDashboardData() {
           (SELECT COUNT(*)::int FROM coaching_schedules WHERE status = 'pending')          AS pending_schedules,
           (SELECT COALESCE(SUM(amount), 0)::bigint FROM coachings
            WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW())
-             AND status IN ('in_progress', 'completed'))                                   AS revenue_this_month,
+             AND status IN ('deposit_confirmed', 'in_progress', 'completed'))               AS revenue_this_month,
           (SELECT COALESCE(SUM(amount), 0)::bigint FROM coachings
            WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW() - INTERVAL '1 month')
-             AND status IN ('in_progress', 'completed'))                                   AS revenue_last_month
+             AND status IN ('deposit_confirmed', 'in_progress', 'completed'))               AS revenue_last_month
       `),
 
       // 최근 가입 회원 5명
@@ -112,10 +112,11 @@ async function getDashboardData() {
 }
 
 const COACHING_STATUS_LABEL: Record<string, { label: string; cls: string }> = {
-  pending:     { label: "입금대기", cls: "bg-yellow-50 text-yellow-700" },
-  in_progress: { label: "코칭중",   cls: "bg-blue-50 text-blue-700" },
-  completed:   { label: "코칭종료", cls: "bg-green-50 text-green-700" },
-  refunded:    { label: "환불",     cls: "bg-red-50 text-red-600" },
+  pending:           { label: "입금대기", cls: "bg-yellow-50 text-yellow-700" },
+  deposit_confirmed: { label: "입금확인", cls: "bg-teal-50 text-teal-700" },
+  in_progress:       { label: "코칭중",   cls: "bg-blue-50 text-blue-700" },
+  completed:         { label: "코칭종료", cls: "bg-green-50 text-green-700" },
+  refunded:          { label: "환불",     cls: "bg-red-50 text-red-600" },
 };
 
 const SCHEDULE_STATUS_LABEL: Record<string, { label: string; cls: string }> = {

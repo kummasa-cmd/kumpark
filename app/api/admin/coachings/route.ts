@@ -4,7 +4,7 @@ import { ensureCoachingTable } from "@/lib/ensure-tables";
 
 const BOOK_TYPES = ["paper", "ebook"];
 const CATEGORIES = ["group", "individual"];
-const STATUSES = ["pending", "in_progress", "completed", "refunded"];
+const STATUSES = ["pending", "deposit_confirmed", "in_progress", "completed", "refunded"];
 
 export async function POST(req: Request) {
   await ensureCoachingTable();

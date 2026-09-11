@@ -47,7 +47,7 @@ export async function POST(request: Request) {
 
   const { rows: activeRows } = await pool.query(
     `SELECT id FROM coachings
-     WHERE member_id = $1 AND book_type = $2 AND status IN ('pending', 'in_progress')
+     WHERE member_id = $1 AND book_type = $2 AND status IN ('pending', 'deposit_confirmed', 'in_progress')
      LIMIT 1`,
     [me.id, book_type]
   );

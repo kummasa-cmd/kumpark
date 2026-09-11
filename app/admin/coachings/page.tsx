@@ -14,10 +14,11 @@ const PAGE_SIZE = 15;
 const BOOK_TYPE_LABEL: Record<string, string> = { paper: "종이책", ebook: "전자책" };
 const CATEGORY_LABEL: Record<string, string> = { group: "그룹", individual: "개인" };
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
-  pending:     { label: "입금대기", cls: "bg-yellow-50 text-yellow-700" },
-  in_progress: { label: "코칭중",   cls: "bg-blue-50 text-blue-700" },
-  completed:   { label: "코칭종료", cls: "bg-green-50 text-green-700" },
-  refunded:    { label: "환불",     cls: "bg-red-50 text-red-600" },
+  pending:           { label: "입금대기", cls: "bg-yellow-50 text-yellow-700" },
+  deposit_confirmed: { label: "입금확인", cls: "bg-teal-50 text-teal-700" },
+  in_progress:       { label: "코칭중",   cls: "bg-blue-50 text-blue-700" },
+  completed:         { label: "코칭종료", cls: "bg-green-50 text-green-700" },
+  refunded:          { label: "환불",     cls: "bg-red-50 text-red-600" },
 };
 
 export default async function CoachingsPage({

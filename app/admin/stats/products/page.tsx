@@ -25,15 +25,15 @@ export default async function StatsProductsPage() {
          WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW()))                AS month_coachings,
         (SELECT COALESCE(SUM(amount), 0)::bigint FROM coachings
          WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW())
-           AND status IN ('in_progress', 'completed'))                                      AS revenue_this_month,
+           AND status IN ('deposit_confirmed', 'in_progress', 'completed'))                  AS revenue_this_month,
         (SELECT COALESCE(SUM(amount), 0)::bigint FROM coachings
          WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW() - INTERVAL '1 month')
-           AND status IN ('in_progress', 'completed'))                                      AS revenue_last_month
+           AND status IN ('deposit_confirmed', 'in_progress', 'completed'))                  AS revenue_last_month
     `),
     pool.query(`
       SELECT TO_CHAR(gs, 'YYYY.MM') AS month,
              COUNT(c.id)::int AS sales,
-             COALESCE(SUM(c.amount) FILTER (WHERE c.status IN ('in_progress', 'completed')), 0)::bigint AS revenue
+             COALESCE(SUM(c.amount) FILTER (WHERE c.status IN ('deposit_confirmed', 'in_progress', 'completed')), 0)::bigint AS revenue
       FROM generate_series(
         DATE_TRUNC('month', NOW()) - INTERVAL '5 months',
         DATE_TRUNC('month', NOW()),
@@ -46,7 +46,7 @@ export default async function StatsProductsPage() {
     pool.query(`
       SELECT product_name,
              COUNT(*)::int AS coachings,
-             COALESCE(SUM(amount) FILTER (WHERE status IN ('in_progress', 'completed')), 0)::bigint AS revenue
+             COALESCE(SUM(amount) FILTER (WHERE status IN ('deposit_confirmed', 'in_progress', 'completed')), 0)::bigint AS revenue
       FROM coachings
       GROUP BY product_name
       ORDER BY coachings DESC, revenue DESC

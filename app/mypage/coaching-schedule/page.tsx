@@ -24,7 +24,7 @@ export default async function MyCoachingSchedulePage() {
             (SELECT COUNT(*)::int FROM coaching_schedules s
               WHERE s.coaching_id = c.id AND s.status IN ('pending', 'confirmed', 'completed')) AS used_count
      FROM coachings c
-     WHERE member_id = $1 AND status = 'in_progress'
+     WHERE member_id = $1 AND status IN ('deposit_confirmed', 'in_progress')
      ORDER BY start_date ASC`,
     [member.id]
   );

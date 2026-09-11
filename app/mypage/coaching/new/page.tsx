@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { ChevronLeft } from "lucide-react";
-import pool from "@/lib/db";
 import { verifyMemberToken, MEMBER_COOKIE } from "@/lib/member-auth";
 import { ensureMemberColumns } from "@/lib/ensure-tables";
+import { hasCoachingBoardAccess } from "@/lib/coaching-access";
 import PublicPostForm from "@/components/community/PublicPostForm";
 
 export const metadata: Metadata = { title: "코칭 게시판 글쓰기" };
@@ -15,11 +15,8 @@ export default async function NewCoachingPostPage() {
   const member = token ? await verifyMemberToken(token) : null;
 
   await ensureMemberColumns();
-  const rows = member
-    ? (await pool.query(`SELECT coaching_yn FROM members WHERE id = $1`, [member.id])).rows
-    : [];
 
-  if (!member || rows[0]?.coaching_yn !== "Y") {
+  if (!member || !(await hasCoachingBoardAccess(member.id))) {
     return (
       <div className="bg-white rounded-xl border border-gray-100 px-5 py-12 text-center text-sm text-gray-400">
         코칭 신청 회원만 이용할 수 있는 게시판입니다.

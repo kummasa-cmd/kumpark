@@ -10,6 +10,7 @@ import {
   ensurePostAttachmentsTable,
   ensureMemberColumns,
 } from "@/lib/ensure-tables";
+import { hasCoachingBoardAccess } from "@/lib/coaching-access";
 import Pagination from "@/components/admin/Pagination";
 
 export const metadata: Metadata = { title: "코칭 자료실" };
@@ -37,11 +38,7 @@ export default async function MyMaterialsPage({
     );
   }
 
-  const { rows: memberRows } = await pool.query(
-    `SELECT coaching_yn FROM members WHERE id = $1`,
-    [member.id]
-  );
-  if (memberRows[0]?.coaching_yn !== "Y") {
+  if (!(await hasCoachingBoardAccess(member.id))) {
     return (
       <div className="bg-white rounded-xl border border-gray-100 px-5 py-12 text-center">
         <p className="text-sm text-gray-400">코칭 신청 회원만 이용할 수 있는 자료실입니다.</p>

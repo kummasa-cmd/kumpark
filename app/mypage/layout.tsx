@@ -1,8 +1,8 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifyMemberToken, MEMBER_COOKIE } from "@/lib/member-auth";
-import pool from "@/lib/db";
 import { ensureMemberColumns } from "@/lib/ensure-tables";
+import { hasCoachingBoardAccess } from "@/lib/coaching-access";
 import MypageSidebar from "@/components/mypage/MypageSidebar";
 import MypageMobileNav from "@/components/mypage/MypageMobileNav";
 
@@ -15,11 +15,7 @@ export default async function MypageLayout({ children }: { children: React.React
   }
 
   await ensureMemberColumns();
-  const { rows } = await pool.query(
-    `SELECT coaching_yn FROM members WHERE id = $1`,
-    [member.id]
-  );
-  const showCoaching = rows[0]?.coaching_yn === "Y";
+  const showCoaching = await hasCoachingBoardAccess(member.id);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">

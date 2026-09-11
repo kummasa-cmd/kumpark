@@ -6,6 +6,7 @@ import { ChevronLeft, Pencil } from "lucide-react";
 import pool from "@/lib/db";
 import { verifyMemberToken, MEMBER_COOKIE } from "@/lib/member-auth";
 import { ensureCategoryTables, ensurePostMemberCol, ensureMemberColumns, ensurePostAdminReply } from "@/lib/ensure-tables";
+import { hasCoachingBoardAccess } from "@/lib/coaching-access";
 import PublicCommentSection, { type Comment } from "@/components/community/PublicCommentSection";
 import PublicPostDeleteButton from "@/components/community/PublicPostDeleteButton";
 
@@ -28,11 +29,7 @@ export default async function MyCoachingPostPage({ params }: { params: { id: str
     );
   }
 
-  const { rows: memberRows } = await pool.query(
-    `SELECT coaching_yn FROM members WHERE id = $1`,
-    [member.id]
-  );
-  if (memberRows[0]?.coaching_yn !== "Y") {
+  if (!(await hasCoachingBoardAccess(member.id))) {
     return (
       <div className="bg-white rounded-xl border border-gray-100 px-5 py-12 text-center text-sm text-gray-400">
         코칭 신청 회원만 이용할 수 있는 게시판입니다.

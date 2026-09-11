@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { get } from "@vercel/blob";
 import pool from "@/lib/db";
 import { verifyMemberToken, MEMBER_COOKIE } from "@/lib/member-auth";
+import { hasCoachingBoardAccess } from "@/lib/coaching-access";
 
 export async function GET(
   _req: Request,
@@ -14,11 +15,7 @@ export async function GET(
     return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
   }
 
-  const { rows: memberRows } = await pool.query(
-    `SELECT coaching_yn FROM members WHERE id = $1`,
-    [member.id]
-  );
-  if (memberRows[0]?.coaching_yn !== "Y") {
+  if (!(await hasCoachingBoardAccess(member.id))) {
     return NextResponse.json({ error: "이용 권한이 없습니다." }, { status: 403 });
   }
 

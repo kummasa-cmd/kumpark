@@ -11,6 +11,7 @@ import {
   ensureCoachingScheduleTable,
   autoCompleteCoachings,
 } from "@/lib/ensure-tables";
+import { hasCoachingBoardAccess } from "@/lib/coaching-access";
 
 export const metadata: Metadata = { title: "마이페이지" };
 export const dynamic = "force-dynamic";
@@ -43,7 +44,7 @@ export default async function MypageDashboard() {
   await ensureCoachingScheduleTable();
   await autoCompleteCoachings();
 
-  const [consultationsRes, coachingsRes, boardPostsRes, inquiriesRes, memberRes, upcomingSchedulesRes] = await Promise.all([
+  const [consultationsRes, coachingsRes, boardPostsRes, inquiriesRes, showCoachingBoard, upcomingSchedulesRes] = await Promise.all([
     pool.query(
       `SELECT id, subject, status, TO_CHAR(created_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD') AS created_at
        FROM consultations WHERE member_id = $1 ORDER BY created_at DESC LIMIT 3`,
@@ -69,7 +70,7 @@ export default async function MypageDashboard() {
        FROM member_inquiries WHERE member_id = $1 ORDER BY created_at DESC LIMIT 3`,
       [member.id]
     ),
-    pool.query(`SELECT coaching_yn FROM members WHERE id = $1`, [member.id]),
+    hasCoachingBoardAccess(member.id),
     pool.query(
       `SELECT s.id, TO_CHAR(s.session_date, 'YYYY-MM-DD') AS session_date, s.session_time, s.status, c.product_name
        FROM coaching_schedules s
@@ -94,8 +95,6 @@ export default async function MypageDashboard() {
      WHERE member_id = $1 AND session_date >= CURRENT_DATE AND status IN ('pending', 'confirmed')`,
     [member.id]
   );
-
-  const showCoachingBoard = memberRes.rows[0]?.coaching_yn === "Y";
 
   const stats = [
     {

@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import TurnstileWidget, { TURNSTILE_SITE_KEY, type TurnstileHandle } from "@/components/member/TurnstileWidget";
 
 type FormData = {
   name: string;
@@ -12,18 +13,26 @@ type FormData = {
   phone: string;
   password: string;
   confirmPassword: string;
+  // Honeypot: hidden from people, often filled in by bots
+  website: string;
 };
 
 export default function SignupForm() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const turnstileRef = useRef<TurnstileHandle>(null);
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>();
   const password = watch("password");
 
   const onSubmit = async (data: FormData) => {
     setError("");
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
+      setError("자동 가입 방지 확인을 완료해 주세요.");
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch("/api/auth/signup", {
@@ -35,6 +44,8 @@ export default function SignupForm() {
           email: data.email,
           phone: data.phone,
           password: data.password,
+          website: data.website,
+          captchaToken,
         }),
       });
       const json = await res.json();
@@ -43,6 +54,8 @@ export default function SignupForm() {
         router.refresh();
       } else {
         setError(json.error ?? "회원가입에 실패했습니다.");
+        // Turnstile tokens are single-use, so request a fresh one
+        turnstileRef.current?.reset();
       }
     } catch {
       setError("서버에 연결할 수 없습니다.");
@@ -53,7 +66,7 @@ export default function SignupForm() {
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+      <form onSubmit={handleSubmit(onSubmit)} className="relative space-y-4" noValidate>
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -138,6 +151,15 @@ export default function SignupForm() {
           />
           {errors.confirmPassword && <p className="text-xs text-red-500 mt-1">{errors.confirmPassword.message}</p>}
         </div>
+
+        <div aria-hidden="true" className="absolute -left-[9999px] w-px h-px overflow-hidden">
+          <label>
+            웹사이트
+            <input {...register("website")} tabIndex={-1} autoComplete="off" />
+          </label>
+        </div>
+
+        {TURNSTILE_SITE_KEY && <TurnstileWidget ref={turnstileRef} onToken={setCaptchaToken} />}
 
         {error && (
           <div className="bg-red-50 text-red-600 text-sm px-3 py-2.5 rounded-lg">{error}</div>

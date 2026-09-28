@@ -3,12 +3,26 @@ import bcrypt from "bcryptjs";
 import pool from "@/lib/db";
 import { signMemberToken, MEMBER_COOKIE } from "@/lib/member-auth";
 import { ensureMemberColumns } from "@/lib/ensure-tables";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 
 export async function POST(request: Request) {
   try {
     await ensureMemberColumns();
 
-    const { name, email, password, phone, nickname } = await request.json();
+    const { name, email, password, phone, nickname, website, captchaToken } = await request.json();
+
+    // Honeypot field is invisible to people; any value means an automated submission
+    if (website) {
+      return NextResponse.json({ error: "자동 가입이 감지되었습니다." }, { status: 400 });
+    }
+
+    const remoteIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+    if (!(await verifyTurnstileToken(captchaToken, remoteIp))) {
+      return NextResponse.json(
+        { error: "자동 가입 방지 확인에 실패했습니다. 다시 시도해 주세요." },
+        { status: 400 }
+      );
+    }
 
     if (!name || !email || !password || !nickname) {
       return NextResponse.json(

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import CaptchaField, { type CaptchaHandle } from "@/components/member/CaptchaField";
 import TurnstileWidget, { TURNSTILE_SITE_KEY, type TurnstileHandle } from "@/components/member/TurnstileWidget";
 
 type FormData = {
@@ -15,6 +16,7 @@ type FormData = {
   confirmPassword: string;
   // Honeypot: hidden from people, often filled in by bots
   website: string;
+  captchaAnswer: string;
 };
 
 export default function SignupForm() {
@@ -23,14 +25,19 @@ export default function SignupForm() {
   const [loading, setLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
   const turnstileRef = useRef<TurnstileHandle>(null);
+  const captchaRef = useRef<CaptchaHandle>(null);
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>();
+  const { register, handleSubmit, watch, resetField, formState: { errors } } = useForm<FormData>();
   const password = watch("password");
 
   const onSubmit = async (data: FormData) => {
     setError("");
-    if (TURNSTILE_SITE_KEY && !captchaToken) {
-      setError("자동 가입 방지 확인을 완료해 주세요.");
+    if (!captchaToken) {
+      setError(
+        TURNSTILE_SITE_KEY
+          ? "자동 가입 방지 확인을 완료해 주세요."
+          : "자동 가입 방지 이미지를 불러오는 중입니다. 잠시 후 다시 시도해 주세요."
+      );
       return;
     }
     setLoading(true);
@@ -46,6 +53,7 @@ export default function SignupForm() {
           password: data.password,
           website: data.website,
           captchaToken,
+          captchaAnswer: data.captchaAnswer,
         }),
       });
       const json = await res.json();
@@ -54,8 +62,9 @@ export default function SignupForm() {
         router.refresh();
       } else {
         setError(json.error ?? "회원가입에 실패했습니다.");
-        // Turnstile tokens are single-use, so request a fresh one
+        // Verification tokens are single-use, so request a fresh challenge
         turnstileRef.current?.reset();
+        captchaRef.current?.reset();
       }
     } catch {
       setError("서버에 연결할 수 없습니다.");
@@ -159,7 +168,20 @@ export default function SignupForm() {
           </label>
         </div>
 
-        {TURNSTILE_SITE_KEY && <TurnstileWidget ref={turnstileRef} onToken={setCaptchaToken} />}
+        {TURNSTILE_SITE_KEY ? (
+          <TurnstileWidget ref={turnstileRef} onToken={setCaptchaToken} />
+        ) : (
+          <CaptchaField
+            ref={captchaRef}
+            inputProps={register("captchaAnswer", {
+              required: "이미지의 숫자를 입력하세요.",
+              pattern: { value: /^\s*\d{5}\s*$/, message: "숫자 5자리를 입력하세요." },
+            })}
+            error={errors.captchaAnswer?.message}
+            onToken={setCaptchaToken}
+            onReset={() => resetField("captchaAnswer")}
+          />
+        )}
 
         {error && (
           <div className="bg-red-50 text-red-600 text-sm px-3 py-2.5 rounded-lg">{error}</div>

@@ -10,7 +10,12 @@ type FormData = { email: string; password: string };
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") ?? "/mypage";
+  // Only allow same-site relative paths to prevent open redirects
+  const redirectParam = searchParams.get("redirect") ?? "";
+  const redirect =
+    redirectParam.startsWith("/") && !redirectParam.startsWith("//") && !redirectParam.includes("\\")
+      ? redirectParam
+      : "/mypage";
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);

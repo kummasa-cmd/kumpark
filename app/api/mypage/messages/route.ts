@@ -3,8 +3,7 @@ import { cookies } from "next/headers";
 import pool from "@/lib/db";
 import { verifyMemberToken, MEMBER_COOKIE } from "@/lib/member-auth";
 import { ensureMessagesTable } from "@/lib/ensure-tables";
-import { sendMessageMail } from "@/lib/mailer";
-import { validateMessageContent, formatSentAt, SITE_URL } from "@/lib/messages";
+import { validateMessageContent } from "@/lib/messages";
 
 // 도배 방지: 직전 발송 후 대기 시간 / 24시간 내 최대 발송 수
 const COOLDOWN_SECONDS = 10;
@@ -54,16 +53,6 @@ export async function POST(request: Request) {
       `INSERT INTO messages (member_id, direction, content) VALUES ($1, 'to_admin', $2) RETURNING id`,
       [member.id, result.content]
     );
-
-    // 관리자 이메일로 쪽지 내용 전송 — 실패해도 발송은 성공 처리
-    sendMessageMail({
-      fromName: member.name,
-      toName: "관리자",
-      toEmail: process.env.ADMIN_EMAIL ?? "kummasa@naver.com",
-      content: result.content,
-      sentAt: formatSentAt(new Date()),
-      listUrl: `${SITE_URL}/admin/messages`,
-    }).catch((err) => console.error("[mailer] 쪽지 메일 발송 실패:", err));
 
     return NextResponse.json({ ok: true, id: rows[0].id });
   } catch (err) {

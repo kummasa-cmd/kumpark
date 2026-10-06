@@ -3,30 +3,19 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Send, X } from "lucide-react";
-import MemberSearchSelect, { type SelectedMember } from "@/components/admin/MemberSearchSelect";
 
 const MAX_LENGTH = 1000;
 
+// 회원 → 관리자 쪽지 작성 (관리자 발송은 AdminMessageComposeForm)
 interface Props {
   endpoint: string;
-  // 관리자: 받는 회원 선택 필요 / 회원: 항상 관리자에게 발송
-  selectRecipient?: boolean;
-  initialRecipient?: SelectedMember | null;
-  defaultOpen?: boolean;
   // 발송 후 이동할 보낸 쪽지 목록
   sentHref: string;
 }
 
-export default function MessageComposeForm({
-  endpoint,
-  selectRecipient = false,
-  initialRecipient = null,
-  defaultOpen = false,
-  sentHref,
-}: Props) {
+export default function MessageComposeForm({ endpoint, sentHref }: Props) {
   const router = useRouter();
-  const [open, setOpen] = useState(defaultOpen);
-  const [recipient, setRecipient] = useState<SelectedMember | null>(initialRecipient);
+  const [open, setOpen] = useState(false);
   const [content, setContent] = useState("");
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
@@ -40,7 +29,6 @@ export default function MessageComposeForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (selectRecipient && !recipient) return setError("받는 회원을 선택하세요.");
     if (!content.trim()) return setError("쪽지 내용을 입력하세요.");
 
     setSending(true);
@@ -48,7 +36,7 @@ export default function MessageComposeForm({
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, memberId: recipient?.id }),
+        body: JSON.stringify({ content }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -56,7 +44,6 @@ export default function MessageComposeForm({
         return;
       }
       close();
-      setRecipient(null);
       router.push(sentHref);
       router.refresh();
     } catch {
@@ -84,15 +71,11 @@ export default function MessageComposeForm({
       className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-3 w-full"
     >
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-gray-800">
-          {selectRecipient ? "회원에게 쪽지 보내기" : "관리자에게 쪽지 보내기"}
-        </h2>
+        <h2 className="text-sm font-semibold text-gray-800">관리자에게 쪽지 보내기</h2>
         <button type="button" onClick={close} className="text-gray-400 hover:text-gray-600" aria-label="닫기">
           <X size={16} />
         </button>
       </div>
-
-      {selectRecipient && <MemberSearchSelect value={recipient} onChange={setRecipient} />}
 
       <div>
         <textarea

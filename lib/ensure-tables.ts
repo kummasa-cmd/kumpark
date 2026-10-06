@@ -281,6 +281,21 @@ export async function ensureMessagesTable() {
   // 각자 쪽지함에서만 삭제 (양쪽 모두 삭제하면 행 삭제)
   await pool.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS member_deleted_at TIMESTAMPTZ`);
   await pool.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS admin_deleted_at TIMESTAMPTZ`);
+  // 여러 회원에게 한 번에 보낸 쪽지 묶음 (전체 발송 / 다중 선택 발송)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS message_broadcasts (
+      id         SERIAL PRIMARY KEY,
+      admin_id   INTEGER REFERENCES admins(id) ON DELETE SET NULL,
+      target     VARCHAR(10) NOT NULL CHECK (target IN ('all', 'selected')),
+      content    TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await pool.query(`ALTER TABLE message_broadcasts ENABLE ROW LEVEL SECURITY`);
+  await pool.query(
+    `ALTER TABLE messages ADD COLUMN IF NOT EXISTS broadcast_id INTEGER REFERENCES message_broadcasts(id) ON DELETE SET NULL`
+  );
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_messages_broadcast ON messages(broadcast_id)`);
 }
 
 export const MESSAGE_MAX_LENGTH = 1000;

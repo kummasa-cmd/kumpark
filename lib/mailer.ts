@@ -474,59 +474,6 @@ export async function sendPasswordResetMail(data: PasswordResetMailData) {
   });
 }
 
-export interface MessageMailData {
-  fromName: string;
-  toName: string;
-  toEmail: string;
-  content: string;
-  sentAt: string;
-  listUrl: string;
-}
-
-// 쪽지 알림 — 받는 사람의 등록 이메일로 쪽지 내용 전송
-export async function sendMessageMail(data: MessageMailData) {
-  const from = process.env.SMTP_FROM ?? process.env.SMTP_USER;
-
-  await createTransporter().sendMail({
-    from: `"검파크 알림" <${from}>`,
-    to: data.toEmail,
-    subject: `[검파크] ${data.fromName}님이 쪽지를 보냈습니다`,
-    html: `
-<!DOCTYPE html>
-<html lang="ko">
-<head><meta charset="UTF-8"></head>
-<body style="font-family:'Apple SD Gothic Neo','맑은 고딕',sans-serif;background:#f9fafb;margin:0;padding:24px;">
-  <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
-    <div style="background:#0B7903;padding:24px 28px;">
-      <p style="margin:0;color:#fff;font-size:18px;font-weight:700;">✉️ 새 쪽지가 도착했습니다</p>
-      <p style="margin:4px 0 0;color:#bbf7d0;font-size:13px;">${escHtml(data.sentAt)}</p>
-    </div>
-    <div style="padding:28px;">
-      <p style="margin:0 0 16px;font-size:14px;color:#374151;">
-        안녕하세요, <strong>${escHtml(data.toName)}</strong>님.<br>
-        <strong>${escHtml(data.fromName)}</strong>님이 보낸 쪽지입니다.
-      </p>
-      <div style="background:#f0fdf4;border-left:3px solid #0B7903;padding:16px;border-radius:0 8px 8px 0;margin-bottom:20px;">
-        <p style="margin:0;font-size:14px;color:#374151;line-height:1.75;white-space:pre-wrap;">${escHtml(data.content)}</p>
-      </div>
-      <a href="${data.listUrl}"
-         style="display:inline-block;background:#0B7903;color:#fff;font-size:14px;font-weight:600;padding:12px 24px;border-radius:8px;text-decoration:none;">
-        쪽지함에서 확인하기 →
-      </a>
-    </div>
-    <div style="background:#f9fafb;padding:16px 28px;border-top:1px solid #e5e7eb;">
-      <p style="margin:0;font-size:11px;color:#9ca3af;">
-        kumpark | 기록이 모여 브랜드가 되는 공간<br>
-        서울시 금천구 범안로 1130. 3층 302호 (가산동, 디지털 엠파이어 빌딩)
-      </p>
-    </div>
-  </div>
-</body>
-</html>`,
-    text: `${data.toName}님, ${data.fromName}님이 쪽지를 보냈습니다.\n\n${data.content}\n\n쪽지함: ${data.listUrl}`,
-  });
-}
-
 function escHtml(str: string): string {
   return str
     .replace(/&/g, "&amp;")

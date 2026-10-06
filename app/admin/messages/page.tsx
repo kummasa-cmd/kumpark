@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import pool from "@/lib/db";
 import { ensureMemberColumns } from "@/lib/ensure-tables";
-import { listMessages, messageCounts } from "@/lib/messages";
+import { listMessages, listAdminSent, messageCounts } from "@/lib/messages";
 import MessageItem from "@/components/messages/MessageItem";
 import MessageTabs from "@/components/messages/MessageTabs";
-import MessageComposeForm from "@/components/messages/MessageComposeForm";
+import AdminMessageComposeForm from "@/components/admin/AdminMessageComposeForm";
+import BroadcastMessageItem from "@/components/admin/BroadcastMessageItem";
 import Pagination from "@/components/admin/Pagination";
 import type { SelectedMember } from "@/components/admin/MemberSearchSelect";
 
@@ -12,6 +13,9 @@ export const metadata: Metadata = { title: "쪽지목록" };
 export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 15;
+
+const memberLabel = (name: string | null, nickname: string | null) =>
+  nickname ? `${name} (${nickname})` : name ?? "탈퇴 회원";
 
 export default async function AdminMessagesPage({
   searchParams,
@@ -21,17 +25,34 @@ export default async function AdminMessagesPage({
   await ensureMemberColumns();
 
   const tab = searchParams.tab === "sent" ? "sent" : "received";
-  const counts = await messageCounts("admin");
-  const total = tab === "sent" ? counts.to_member : counts.to_admin;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const page = Math.min(Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1), totalPages);
+  const requestedPage = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
 
-  const { rows } = await listMessages({
-    direction: tab === "sent" ? "to_member" : "to_admin",
-    viewer: "admin",
-    limit: PAGE_SIZE,
-    offset: (page - 1) * PAGE_SIZE,
-  });
+  const [counts, sentFirst, activeRes] = await Promise.all([
+    messageCounts("admin"),
+    // 보낸 쪽지는 묶음 발송을 한 건으로 세므로 별도 집계
+    listAdminSent(PAGE_SIZE, tab === "sent" ? (requestedPage - 1) * PAGE_SIZE : 0),
+    pool.query<{ cnt: number }>(`SELECT COUNT(*)::int AS cnt FROM members WHERE status = 'active'`),
+  ]);
+
+  const total = tab === "sent" ? sentFirst.total : counts.to_admin;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const page = Math.min(requestedPage, totalPages);
+
+  const received =
+    tab === "received"
+      ? await listMessages({
+          direction: "to_admin",
+          viewer: "admin",
+          limit: PAGE_SIZE,
+          offset: (page - 1) * PAGE_SIZE,
+        })
+      : null;
+  const sent =
+    tab === "sent"
+      ? page === requestedPage
+        ? sentFirst
+        : await listAdminSent(PAGE_SIZE, (page - 1) * PAGE_SIZE)
+      : null;
 
   // 답장(?to=회원ID) 시 받는 회원 미리 선택
   let replyTo: SelectedMember | null = null;
@@ -44,7 +65,7 @@ export default async function AdminMessagesPage({
     replyTo = m[0] ?? null;
   }
 
-  const memberLabel = (name: string, nickname: string) => (nickname ? `${name} (${nickname})` : name);
+  const isEmpty = tab === "sent" ? !sent?.rows.length : !received?.rows.length;
 
   return (
     <div className="space-y-5">
@@ -62,19 +83,16 @@ export default async function AdminMessagesPage({
           active={tab}
           receivedTotal={counts.to_admin}
           receivedUnread={counts.unread_to_admin}
-          sentTotal={counts.to_member}
+          sentTotal={sentFirst.total}
         />
-        <MessageComposeForm
+        <AdminMessageComposeForm
           key={replyTo?.id ?? "new"}
-          endpoint="/api/admin/messages"
-          selectRecipient
+          activeMemberCount={activeRes.rows[0].cnt}
           initialRecipient={replyTo}
-          defaultOpen={Boolean(replyTo)}
-          sentHref="/admin/messages?tab=sent"
         />
       </div>
 
-      {rows.length === 0 ? (
+      {isEmpty ? (
         <div className="bg-white rounded-xl border border-gray-100 px-5 py-12 text-center">
           <p className="text-gray-400 text-sm">
             {tab === "sent" ? "보낸 쪽지가 없습니다." : "받은 쪽지가 없습니다."}
@@ -82,29 +100,55 @@ export default async function AdminMessagesPage({
         </div>
       ) : (
         <div className="space-y-2">
-          {rows.map((m) => (
+          {received?.rows.map((m) => (
             <MessageItem
               key={m.id}
-              box={tab}
-              readEndpoint={tab === "received" ? `/api/admin/messages/${m.id}/read` : undefined}
+              box="received"
+              readEndpoint={`/api/admin/messages/${m.id}/read`}
               deleteEndpoint={`/api/admin/messages/${m.id}`}
-              replyHref={tab === "received" ? `/admin/messages?tab=received&to=${m.member_id}` : undefined}
+              replyHref={`/admin/messages?tab=received&to=${m.member_id}`}
               message={{
                 id: m.id,
                 content: m.content,
                 created_at: m.created_at,
                 read_at: m.read_at,
-                counterpart:
-                  tab === "sent"
-                    ? `To. ${memberLabel(m.member_name, m.member_nickname)}`
-                    : `From. ${memberLabel(m.member_name, m.member_nickname)}`,
-                counterpartSub:
-                  tab === "sent"
-                    ? `${m.member_email}${m.admin_name ? ` · 보낸 관리자 ${m.admin_name}` : ""}`
-                    : m.member_email,
+                counterpart: `From. ${memberLabel(m.member_name, m.member_nickname)}`,
+                counterpartSub: m.member_email,
               }}
             />
           ))}
+
+          {sent?.rows.map((m) =>
+            m.kind === "broadcast" ? (
+              <BroadcastMessageItem
+                key={`b-${m.id}`}
+                broadcast={{
+                  id: m.id,
+                  content: m.content,
+                  target: m.target === "all" ? "all" : "selected",
+                  created_at: m.created_at,
+                  recipient_count: m.recipient_count,
+                  read_count: m.read_count,
+                  first_member_name: m.member_name,
+                  admin_name: m.admin_name,
+                }}
+              />
+            ) : (
+              <MessageItem
+                key={`m-${m.id}`}
+                box="sent"
+                deleteEndpoint={`/api/admin/messages/${m.id}`}
+                message={{
+                  id: m.id,
+                  content: m.content,
+                  created_at: m.created_at,
+                  read_at: m.read_at,
+                  counterpart: `To. ${memberLabel(m.member_name, m.member_nickname)}`,
+                  counterpartSub: `${m.member_email ?? ""}${m.admin_name ? ` · 보낸 관리자 ${m.admin_name}` : ""}`,
+                }}
+              />
+            )
+          )}
         </div>
       )}
 

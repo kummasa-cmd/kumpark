@@ -3,7 +3,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, BookOpen, BookMarked } from "lucide-react";
 import BannerCarousel from "@/components/main/BannerCarousel";
+import { cookies } from "next/headers";
 import pool from "@/lib/db";
+import { verifyMemberToken, MEMBER_COOKIE } from "@/lib/member-auth";
+import { countMemberUnread } from "@/lib/messages";
+import UnreadMessageAlert from "@/components/messages/UnreadMessageAlert";
+import { MEMBER_ALERT_KEY } from "@/lib/message-alert";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +68,11 @@ const featuredProducts = [
 export default async function HomePage() {
   const s = await getSettings();
 
+  // 로그인 회원에게 확인하지 않은 쪽지가 있으면 알림
+  const token = cookies().get(MEMBER_COOKIE)?.value;
+  const member = token ? await verifyMemberToken(token) : null;
+  const unreadMessages = member ? await countMemberUnread(member.id).catch(() => 0) : 0;
+
   const bannerLabels = [
     s.banner_1_label || null,
     s.banner_2_label || null,
@@ -72,6 +82,9 @@ export default async function HomePage() {
 
   return (
     <>
+      {member && (
+        <UnreadMessageAlert count={unreadMessages} href="/mypage/messages" storageKey={MEMBER_ALERT_KEY} />
+      )}
       {/* Hero */}
       <section className="bg-white py-20 sm:py-28">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">

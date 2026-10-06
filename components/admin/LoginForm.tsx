@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { resetUnreadAlert, ADMIN_ALERT_KEY } from "@/lib/message-alert";
 
 type FormData = {
   email: string;
@@ -31,6 +32,7 @@ export default function LoginForm() {
       });
       const json = await res.json();
       if (res.ok) {
+        resetUnreadAlert(ADMIN_ALERT_KEY);
         router.push("/admin");
         router.refresh();
       } else {

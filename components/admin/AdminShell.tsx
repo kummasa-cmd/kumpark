@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Menu, LogOut, Mail } from "lucide-react";
 import AdminSidebar from "./AdminSidebar";
 import UnreadMessageAlert from "@/components/messages/UnreadMessageAlert";
+import { ADMIN_ALERT_KEY } from "@/lib/message-alert";
 
 export default function AdminShell({
   children,
@@ -29,7 +30,7 @@ export default function AdminShell({
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
-      <UnreadMessageAlert count={unreadMessages} href="/admin/messages" storageKey="kumpark_admin_unread_alerted" />
+      <UnreadMessageAlert count={unreadMessages} href="/admin/messages" storageKey={ADMIN_ALERT_KEY} />
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-20 md:hidden"

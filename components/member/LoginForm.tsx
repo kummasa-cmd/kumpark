@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { resetUnreadAlert, MEMBER_ALERT_KEY } from "@/lib/message-alert";
 
 type FormData = { email: string; password: string };
 
@@ -33,6 +34,7 @@ export default function LoginForm() {
       });
       const json = await res.json();
       if (res.ok) {
+        resetUnreadAlert(MEMBER_ALERT_KEY);
         router.push(redirect);
         router.refresh();
       } else {

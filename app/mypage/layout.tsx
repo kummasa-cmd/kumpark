@@ -5,6 +5,7 @@ import { ensureMemberColumns } from "@/lib/ensure-tables";
 import { hasCoachingBoardAccess } from "@/lib/coaching-access";
 import { countMemberUnread } from "@/lib/messages";
 import UnreadMessageAlert from "@/components/messages/UnreadMessageAlert";
+import { MEMBER_ALERT_KEY } from "@/lib/message-alert";
 import MypageSidebar from "@/components/mypage/MypageSidebar";
 import MypageMobileNav from "@/components/mypage/MypageMobileNav";
 
@@ -24,7 +25,7 @@ export default async function MypageLayout({ children }: { children: React.React
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-      <UnreadMessageAlert count={unreadMessages} href="/mypage/messages" storageKey="kumpark_member_unread_alerted" />
+      <UnreadMessageAlert count={unreadMessages} href="/mypage/messages" storageKey={MEMBER_ALERT_KEY} />
       {/* 모바일 탭 */}
       <MypageMobileNav showCoaching={showCoaching} />
 

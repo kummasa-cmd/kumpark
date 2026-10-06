@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { ensureCategoryTables } from "@/lib/ensure-tables";
+import { requireAdmin } from "@/lib/admin-guard";
 
 export async function GET() {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   await ensureCategoryTables();
   const { rows } = await pool.query(`
     SELECT b.id, b.name, b.slug, b.sort_order, b.is_visible, b.user_writable,
@@ -18,6 +22,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   const {
     name, slug, sort_order, is_visible, user_writable,
     use_category, use_comment, board_type,

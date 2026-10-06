@@ -4,6 +4,7 @@ import pool from "@/lib/db";
 import { verifyAdminToken, COOKIE_NAME } from "@/lib/auth";
 import { ensureCoachingScheduleTable } from "@/lib/ensure-tables";
 import { sendScheduleDecisionMail } from "@/lib/mailer";
+import { requireAdmin } from "@/lib/admin-guard";
 
 async function getAdmin() {
   const token = cookies().get(COOKIE_NAME)?.value;
@@ -17,6 +18,9 @@ export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
 ) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   const admin = await getAdmin();
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

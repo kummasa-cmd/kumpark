@@ -37,6 +37,7 @@ const menuConfig: MenuItem[] = [
     children: [
       { label: "회원목록", href: "/admin/members" },
       { label: "회원등록", href: "/admin/members/new" },
+      { label: "쪽지목록", href: "/admin/messages" },
     ],
   },
   {

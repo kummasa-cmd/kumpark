@@ -2,8 +2,12 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import pool from "@/lib/db";
 import { ensureMemberColumns } from "@/lib/ensure-tables";
+import { requireAdmin } from "@/lib/admin-guard";
 
 export async function GET() {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   await ensureMemberColumns();
   const { rows } = await pool.query(`
     SELECT id, name, nickname, email, phone, status, sms_yn, email_yn, coaching_yn,
@@ -15,6 +19,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   await ensureMemberColumns();
   const {
     name, nickname, email, phone, password, status, memo,

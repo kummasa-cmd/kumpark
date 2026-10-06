@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { ensureCoachingTable } from "@/lib/ensure-tables";
+import { requireAdmin } from "@/lib/admin-guard";
 
 const BOOK_TYPES = ["paper", "ebook"];
 const CATEGORIES = ["group", "individual"];
@@ -10,6 +11,9 @@ export async function GET(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   await ensureCoachingTable();
   const { rows } = await pool.query(
     `SELECT c.id, c.member_id, c.book_type, c.category, c.product_name, c.amount,
@@ -30,6 +34,9 @@ export async function PUT(
   req: Request,
   { params }: { params: { id: string } }
 ) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   const {
     member_id, book_type, category, product_name, amount,
     start_date, end_date, session_count, completed_count, status,
@@ -77,6 +84,9 @@ export async function DELETE(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   const { rowCount } = await pool.query(`DELETE FROM coachings WHERE id = $1`, [params.id]);
   if (rowCount === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ ok: true });

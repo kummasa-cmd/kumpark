@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MessageSquare, ClipboardList, HelpCircle, Settings, LayoutDashboard, BookOpen, CalendarDays, FolderOpen } from "lucide-react";
+import { MessageSquare, ClipboardList, HelpCircle, Settings, LayoutDashboard, BookOpen, CalendarDays, FolderOpen, Mail } from "lucide-react";
 
 const navItems = [
   { href: "/mypage",               label: "대시보드", icon: LayoutDashboard, exact: true },
   { href: "/mypage/consultations", label: "상담",     icon: MessageSquare },
   { href: "/mypage/coachings",     label: "코칭내역", icon: ClipboardList },
   { href: "/mypage/coaching-schedule", label: "코칭일정", icon: CalendarDays },
+  { href: "/mypage/messages",      label: "쪽지",     icon: Mail },
   { href: "/mypage/inquiry",       label: "문의",     icon: HelpCircle },
   { href: "/mypage/coaching",      label: "코칭글",   icon: BookOpen, coachingOnly: true },
   { href: "/mypage/materials",     label: "자료실",   icon: FolderOpen, coachingOnly: true },

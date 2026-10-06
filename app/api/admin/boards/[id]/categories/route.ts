@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { ensureCategoryTables } from "@/lib/ensure-tables";
+import { requireAdmin } from "@/lib/admin-guard";
 
 export async function GET(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   await ensureCategoryTables();
   const { rows } = await pool.query(
     `SELECT id, name, sort_order FROM board_categories
@@ -19,6 +23,9 @@ export async function POST(
   req: Request,
   { params }: { params: { id: string } }
 ) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   await ensureCategoryTables();
   const { name, sort_order } = await req.json();
   if (!name) return NextResponse.json({ error: "카테고리명을 입력하세요." }, { status: 400 });

@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { ensureCategoryTables } from "@/lib/ensure-tables";
+import { requireAdmin } from "@/lib/admin-guard";
 
 export async function GET(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   await ensureCategoryTables();
   const { rows } = await pool.query(
     `SELECT id, name, slug, sort_order, is_visible, user_writable, use_category,
@@ -22,6 +26,9 @@ export async function PUT(
   req: Request,
   { params }: { params: { id: string } }
 ) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   await ensureCategoryTables();
   const { name, slug, sort_order, is_visible, user_writable, use_category, use_comment, board_type } =
     await req.json();
@@ -68,6 +75,9 @@ export async function DELETE(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   const { rows } = await pool.query(
     `SELECT COUNT(*)::int AS cnt FROM posts WHERE board_id = $1`,
     [params.id]

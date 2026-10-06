@@ -256,3 +256,31 @@ export async function ensurePostAttachmentsTable() {
   await pool.query(`ALTER TABLE post_attachments ADD COLUMN IF NOT EXISTS blob_pathname TEXT`);
   await pool.query(`ALTER TABLE post_attachments ALTER COLUMN file_data DROP NOT NULL`);
 }
+
+// 관리자 ↔ 회원 쪽지
+// direction: 'to_admin' = 회원이 관리자에게, 'to_member' = 관리자가 회원에게
+export async function ensureMessagesTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS messages (
+      id         SERIAL PRIMARY KEY,
+      member_id  INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+      admin_id   INTEGER REFERENCES admins(id) ON DELETE SET NULL,
+      direction  VARCHAR(10) NOT NULL CHECK (direction IN ('to_admin', 'to_member')),
+      content    TEXT NOT NULL,
+      read_at    TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_messages_member ON messages(member_id, direction, created_at DESC)`
+  );
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_messages_unread_admin ON messages(direction) WHERE read_at IS NULL`
+  );
+  await pool.query(`ALTER TABLE messages ENABLE ROW LEVEL SECURITY`);
+  // 각자 쪽지함에서만 삭제 (양쪽 모두 삭제하면 행 삭제)
+  await pool.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS member_deleted_at TIMESTAMPTZ`);
+  await pool.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS admin_deleted_at TIMESTAMPTZ`);
+}
+
+export const MESSAGE_MAX_LENGTH = 1000;

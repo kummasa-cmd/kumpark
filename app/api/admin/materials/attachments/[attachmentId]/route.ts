@@ -1,21 +1,14 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { get, del } from "@vercel/blob";
 import pool from "@/lib/db";
-import { verifyAdminToken, COOKIE_NAME } from "@/lib/auth";
-
-async function requireAdmin() {
-  const token = cookies().get(COOKIE_NAME)?.value;
-  return token ? await verifyAdminToken(token) : null;
-}
+import { requireAdmin } from "@/lib/admin-guard";
 
 export async function GET(
   _req: Request,
   { params }: { params: { attachmentId: string } }
 ) {
-  if (!(await requireAdmin())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
 
   const { rows } = await pool.query(
     `SELECT file_name, mime_type, blob_url FROM post_attachments WHERE id = $1`,
@@ -41,9 +34,8 @@ export async function DELETE(
   _req: Request,
   { params }: { params: { attachmentId: string } }
 ) {
-  if (!(await requireAdmin())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
 
   const { rows } = await pool.query(
     `DELETE FROM post_attachments WHERE id = $1 RETURNING blob_url`,

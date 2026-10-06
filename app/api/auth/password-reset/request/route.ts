@@ -3,6 +3,7 @@ import crypto from "crypto";
 import pool from "@/lib/db";
 import { ensurePasswordResetTable } from "@/lib/ensure-tables";
 import { sendPasswordResetMail } from "@/lib/mailer";
+import { isLimited, recordAttempt, getClientIp, TOO_MANY } from "@/lib/rate-limit";
 
 const GENERIC_MESSAGE =
   "입력하신 이메일로 회원 정보가 있다면 비밀번호 재설정 메일을 보내드렸습니다.";
@@ -17,7 +18,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "이메일을 입력하세요." }, { status: 400 });
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    // 메일 폭탄 방지: 1시간 내 이메일당 3회, IP당 10회
+    const attempts = [
+      { scope: "reset_request_email", key: normalizedEmail },
+      { scope: "reset_request_ip", key: getClientIp(request) },
+    ];
+    if (
+      await isLimited([
+        { ...attempts[0], max: 3, windowMinutes: 60 },
+        { ...attempts[1], max: 10, windowMinutes: 60 },
+      ])
+    ) {
+      return NextResponse.json({ error: TOO_MANY }, { status: 429 });
+    }
+    await recordAttempt(attempts);
 
     const { rows } = await pool.query(
       "SELECT id, name, email FROM members WHERE email = $1 AND status = 'active'",

@@ -12,6 +12,8 @@ import {
   autoCompleteCoachings,
 } from "@/lib/ensure-tables";
 import { hasCoachingBoardAccess } from "@/lib/coaching-access";
+import { countMemberUnread } from "@/lib/messages";
+import MessageBadgeLink from "@/components/mypage/MessageBadgeLink";
 
 export const metadata: Metadata = { title: "마이페이지" };
 export const dynamic = "force-dynamic";
@@ -90,6 +92,7 @@ export default async function MypageDashboard() {
     "SELECT COUNT(*)::int AS cnt FROM member_inquiries WHERE member_id = $1 AND status = 'pending'",
     [member.id]
   );
+  const unreadMessages = await countMemberUnread(member.id);
   const upcomingSchedulesCount = await pool.query(
     `SELECT COUNT(*)::int AS cnt FROM coaching_schedules
      WHERE member_id = $1 AND session_date >= CURRENT_DATE AND status IN ('pending', 'confirmed')`,
@@ -134,7 +137,10 @@ export default async function MypageDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-gray-900">안녕하세요, {member.name}님!</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl font-bold text-gray-900">안녕하세요, {member.name}님!</h1>
+          <MessageBadgeLink count={unreadMessages} variant="light" className="md:hidden" />
+        </div>
         <p className="text-sm text-gray-500 mt-0.5">검파크 마이페이지에 오신 것을 환영합니다.</p>
       </div>
 

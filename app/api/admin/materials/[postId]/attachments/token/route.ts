@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import pool from "@/lib/db";
 import { verifyAdminToken, COOKIE_NAME } from "@/lib/auth";
+import { requireAdmin } from "@/lib/admin-guard";
 
 // Vercel rejects request bodies over ~4.5MB before they reach the function,
 // so files upload directly from the browser to Blob storage; this route only
@@ -17,6 +18,9 @@ export async function POST(
   req: Request,
   { params }: { params: { postId: string } }
 ) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   const token = cookies().get(COOKIE_NAME)?.value;
   const payload = token ? await verifyAdminToken(token) : null;
   if (!payload) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

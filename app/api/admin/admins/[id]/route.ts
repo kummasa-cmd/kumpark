@@ -2,11 +2,15 @@ import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { verifyAdminToken, COOKIE_NAME } from "@/lib/auth";
+import { requireAdmin } from "@/lib/admin-guard";
 
 export async function GET(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
+  const guard = await requireAdmin({ superOnly: true });
+  if (guard instanceof NextResponse) return guard;
+
   const { rows } = await pool.query(
     `SELECT id, name, email, role, status FROM admins WHERE id = $1`,
     [params.id]
@@ -19,6 +23,9 @@ export async function PUT(
   req: Request,
   { params }: { params: { id: string } }
 ) {
+  const guard = await requireAdmin({ superOnly: true });
+  if (guard instanceof NextResponse) return guard;
+
   const { name, email, role, status, password } = await req.json();
 
   if (!name || !email) {
@@ -51,6 +58,9 @@ export async function DELETE(
   req: Request,
   { params }: { params: { id: string } }
 ) {
+  const guard = await requireAdmin({ superOnly: true });
+  if (guard instanceof NextResponse) return guard;
+
   // 현재 로그인한 관리자 확인
   const cookie = req.headers.get("cookie") ?? "";
   const tokenMatch = cookie.match(new RegExp(`${COOKIE_NAME}=([^;]+)`));

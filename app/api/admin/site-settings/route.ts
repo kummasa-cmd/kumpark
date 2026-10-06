@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireAdmin } from "@/lib/admin-guard";
 
 const DEFAULTS: Record<string, string> = {
   hero_title_1: "기록이 모여",
@@ -33,6 +34,9 @@ async function ensureTable() {
 }
 
 export async function GET() {
+  const guard = await requireAdmin({ superOnly: true });
+  if (guard instanceof NextResponse) return guard;
+
   await ensureTable();
   const { rows } = await pool.query(`SELECT key, value FROM site_settings`);
   const settings: Record<string, string> = {};
@@ -41,6 +45,9 @@ export async function GET() {
 }
 
 export async function PUT(req: Request) {
+  const guard = await requireAdmin({ superOnly: true });
+  if (guard instanceof NextResponse) return guard;
+
   const body: Record<string, string> = await req.json();
   await ensureTable();
 

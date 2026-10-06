@@ -12,14 +12,17 @@ import {
   BookOpen,
   CalendarDays,
   FolderOpen,
+  Mail,
 } from "lucide-react";
 import { useState } from "react";
+import MessageBadgeLink from "./MessageBadgeLink";
 
 const navItems = [
   { href: "/mypage",               label: "대시보드",      icon: LayoutDashboard, exact: true },
   { href: "/mypage/consultations", label: "상담 내역",     icon: MessageSquare },
   { href: "/mypage/coachings",     label: "코칭 내역",     icon: ClipboardList },
   { href: "/mypage/coaching-schedule", label: "코칭 일정", icon: CalendarDays },
+  { href: "/mypage/messages",      label: "쪽지함",        icon: Mail },
   { href: "/mypage/inquiry",       label: "1대1 문의",     icon: HelpCircle },
   { href: "/mypage/coaching",      label: "코칭 게시판",   icon: BookOpen, coachingOnly: true },
   { href: "/mypage/materials",     label: "코칭 자료실",   icon: FolderOpen, coachingOnly: true },
@@ -29,9 +32,10 @@ const navItems = [
 interface Props {
   memberName: string;
   showCoaching: boolean;
+  unreadMessages: number;
 }
 
-export default function MypageSidebar({ memberName, showCoaching }: Props) {
+export default function MypageSidebar({ memberName, showCoaching, unreadMessages }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -55,7 +59,10 @@ export default function MypageSidebar({ memberName, showCoaching }: Props) {
       {/* 사용자 정보 */}
       <div className="bg-brand-green rounded-xl px-4 py-5 text-white mb-4">
         <p className="text-xs text-green-200 mb-0.5">환영합니다</p>
-        <p className="font-bold text-base truncate">{memberName}</p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="font-bold text-base truncate">{memberName}</p>
+          <MessageBadgeLink count={unreadMessages} />
+        </div>
         <p className="text-xs text-green-200 mt-0.5">회원님</p>
       </div>
 
@@ -75,7 +82,16 @@ export default function MypageSidebar({ memberName, showCoaching }: Props) {
               }`}
             >
               <Icon size={16} />
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {item.href === "/mypage/messages" && unreadMessages > 0 && (
+                <span
+                  className={`text-xs px-1.5 py-0.5 rounded-full ${
+                    active ? "bg-white text-brand-green" : "bg-red-500 text-white"
+                  }`}
+                >
+                  {unreadMessages}
+                </span>
+              )}
             </Link>
           );
         })}

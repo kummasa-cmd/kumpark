@@ -2,11 +2,15 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import pool from "@/lib/db";
 import { ensureMemberColumns } from "@/lib/ensure-tables";
+import { requireAdmin } from "@/lib/admin-guard";
 
 export async function GET(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   await ensureMemberColumns();
   const { rows } = await pool.query(
     `SELECT id, name, nickname, email, phone, status, memo,
@@ -23,6 +27,9 @@ export async function PUT(
   req: Request,
   { params }: { params: { id: string } }
 ) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   const {
     name, nickname, email, phone, password, status, memo,
     blog_url, threads_url, instagram_url, x_url, brunch_url, youtube_url, homepage_url,
@@ -84,6 +91,9 @@ export async function DELETE(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   try {
     const { rowCount } = await pool.query(`DELETE FROM members WHERE id = $1`, [params.id]);
     if (rowCount === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });

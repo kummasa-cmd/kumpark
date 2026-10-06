@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import bcrypt from "bcryptjs";
+import { requireAdmin } from "@/lib/admin-guard";
 
 export async function GET() {
+  const guard = await requireAdmin({ superOnly: true });
+  if (guard instanceof NextResponse) return guard;
+
   const { rows } = await pool.query(
     `SELECT id, name, email, role, status, last_login_at, created_at
      FROM admins ORDER BY created_at ASC`
@@ -11,6 +15,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const guard = await requireAdmin({ superOnly: true });
+  if (guard instanceof NextResponse) return guard;
+
   const { name, email, password, role, status } = await req.json();
 
   if (!name || !email || !password) {

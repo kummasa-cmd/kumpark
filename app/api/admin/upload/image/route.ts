@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { requireAdmin } from "@/lib/admin-guard";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 
 export async function POST(req: Request) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   const formData = await req.formData();
   const file = formData.get("file");
 

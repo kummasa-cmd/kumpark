@@ -3,15 +3,18 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, LogOut } from "lucide-react";
+import { Menu, LogOut, Mail } from "lucide-react";
 import AdminSidebar from "./AdminSidebar";
+import UnreadMessageAlert from "@/components/messages/UnreadMessageAlert";
 
 export default function AdminShell({
   children,
   role,
+  unreadMessages,
 }: {
   children: React.ReactNode;
   role: string;
+  unreadMessages: number;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -26,6 +29,7 @@ export default function AdminShell({
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
+      <UnreadMessageAlert count={unreadMessages} href="/admin/messages" storageKey="kumpark_admin_unread_alerted" />
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-20 md:hidden"
@@ -48,6 +52,18 @@ export default function AdminShell({
             <span className="font-semibold text-gray-800 text-sm">kumpark 관리자</span>
           </div>
           <div className="flex items-center gap-3">
+            <Link
+              href="/admin/messages"
+              className="relative p-1.5 rounded-md text-gray-500 hover:bg-gray-100 hover:text-brand-green transition-colors"
+              aria-label={`쪽지목록 (확인하지 않은 쪽지 ${unreadMessages}개)`}
+            >
+              <Mail size={18} />
+              {unreadMessages > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                  {unreadMessages > 99 ? "99+" : unreadMessages}
+                </span>
+              )}
+            </Link>
             <Link
               href="/"
               target="_blank"

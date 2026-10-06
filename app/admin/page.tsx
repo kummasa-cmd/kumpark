@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Users, ShoppingCart, MessageSquare, TrendingUp, ArrowRight, CalendarDays } from "lucide-react";
+import { Users, ShoppingCart, MessageSquare, TrendingUp, ArrowRight, CalendarDays, Mail } from "lucide-react";
 import pool from "@/lib/db";
-import { ensureCoachingTable, ensureCoachingScheduleTable, autoCompleteCoachings } from "@/lib/ensure-tables";
+import {
+  ensureCoachingTable,
+  ensureCoachingScheduleTable,
+  ensureMessagesTable,
+  autoCompleteCoachings,
+} from "@/lib/ensure-tables";
 
 export const metadata: Metadata = { title: "대시보드" };
 export const dynamic = "force-dynamic";
@@ -11,6 +16,7 @@ async function getDashboardData() {
   try {
     await ensureCoachingTable();
     await ensureCoachingScheduleTable();
+    await ensureMessagesTable();
     await autoCompleteCoachings();
     const [statsRow, recentMembers, recentConsultations, recentCoachings, upcomingSchedules] = await Promise.all([
       // 통계 — 단일 쿼리로 한 번에
@@ -25,6 +31,10 @@ async function getDashboardData() {
           (SELECT COUNT(*)::int FROM consultations WHERE status = 'pending')               AS pending_consultations,
           (SELECT COUNT(*)::int FROM consultations)                                         AS total_consultations,
           (SELECT COUNT(*)::int FROM coaching_schedules WHERE status = 'pending')          AS pending_schedules,
+          (SELECT COUNT(*)::int FROM messages
+           WHERE direction = 'to_admin' AND read_at IS NULL AND admin_deleted_at IS NULL) AS unread_messages,
+          (SELECT COUNT(*)::int FROM messages
+           WHERE direction = 'to_admin' AND admin_deleted_at IS NULL)                     AS received_messages,
           (SELECT COALESCE(SUM(amount), 0)::bigint FROM coachings
            WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW())
              AND status IN ('deposit_confirmed', 'in_progress', 'completed'))               AS revenue_this_month,
@@ -98,6 +108,8 @@ async function getDashboardData() {
         pendingConsultations: s.pending_consultations,
         totalConsultations: s.total_consultations,
         pendingSchedules: s.pending_schedules,
+        unreadMessages: s.unread_messages,
+        receivedMessages: s.received_messages,
         revenueThisMonth: thisMonth,
         revenueGrowth,
       },
@@ -150,6 +162,15 @@ export default async function AdminDashboard() {
           color: "text-green-600",
           bg: "bg-green-50",
           href: "/admin/coachings",
+        },
+        {
+          label: "확인하지 않은 쪽지",
+          value: `${data.stats.unreadMessages}건`,
+          sub: `받은 쪽지 ${data.stats.receivedMessages}건`,
+          icon: Mail,
+          color: "text-rose-600",
+          bg: "bg-rose-50",
+          href: "/admin/messages",
         },
         {
           label: "미처리 상담",

@@ -3,8 +3,12 @@ import { cookies } from "next/headers";
 import pool from "@/lib/db";
 import { verifyAdminToken, COOKIE_NAME } from "@/lib/auth";
 import { ensureCoachingMaterialsBoard } from "@/lib/ensure-tables";
+import { requireAdmin } from "@/lib/admin-guard";
 
 export async function POST(req: Request) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   await ensureCoachingMaterialsBoard();
 
   const token = cookies().get(COOKIE_NAME)?.value;

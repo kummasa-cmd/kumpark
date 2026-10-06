@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import pool from "@/lib/db";
 import { verifyAdminToken, COOKIE_NAME } from "@/lib/auth";
 import { ensureMemberTables } from "@/lib/ensure-tables";
+import { requireAdmin } from "@/lib/admin-guard";
 
 async function getAdmin() {
   const token = cookies().get(COOKIE_NAME)?.value;
@@ -11,6 +12,9 @@ async function getAdmin() {
 }
 
 export async function GET() {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   const admin = await getAdmin();
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireAdmin } from "@/lib/admin-guard";
 
 export async function PUT(
   req: Request,
   { params }: { params: { id: string; catId: string } }
 ) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   const { name, sort_order } = await req.json();
   if (!name) return NextResponse.json({ error: "카테고리명을 입력하세요." }, { status: 400 });
 
@@ -20,6 +24,9 @@ export async function DELETE(
   _req: Request,
   { params }: { params: { id: string; catId: string } }
 ) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   const { rows } = await pool.query(
     `SELECT COUNT(*)::int AS cnt FROM posts WHERE category_id = $1`,
     [params.catId]

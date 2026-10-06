@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireAdmin } from "@/lib/admin-guard";
 
 export async function POST(
   req: Request,
   { params }: { params: { id: string } }
 ) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   const { title, author_name, content, is_notice, created_at, category_id } = await req.json();
 
   if (!title || !author_name || !content) {

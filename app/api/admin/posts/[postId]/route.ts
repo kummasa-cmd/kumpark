@@ -1,21 +1,14 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import pool from "@/lib/db";
-import { verifyAdminToken, COOKIE_NAME } from "@/lib/auth";
 import { ensurePostAdminReply } from "@/lib/ensure-tables";
-
-async function requireAdmin() {
-  const token = cookies().get(COOKIE_NAME)?.value;
-  return token ? await verifyAdminToken(token) : null;
-}
+import { requireAdmin } from "@/lib/admin-guard";
 
 export async function GET(
   _req: Request,
   { params }: { params: { postId: string } }
 ) {
-  if (!(await requireAdmin())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
 
   const { rows } = await pool.query(
     `SELECT id, board_id, title, author_name, content, is_notice, category_id,
@@ -31,9 +24,8 @@ export async function PUT(
   req: Request,
   { params }: { params: { postId: string } }
 ) {
-  if (!(await requireAdmin())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
 
   const { title, author_name, content, is_notice, created_at, category_id } = await req.json();
 
@@ -59,9 +51,8 @@ export async function PATCH(
   req: Request,
   { params }: { params: { postId: string } }
 ) {
-  if (!(await requireAdmin())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
 
   await ensurePostAdminReply();
   const { reply } = await req.json();
@@ -80,9 +71,8 @@ export async function DELETE(
   _req: Request,
   { params }: { params: { postId: string } }
 ) {
-  if (!(await requireAdmin())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
 
   const { rowCount } = await pool.query(
     `DELETE FROM posts WHERE id = $1`,

@@ -5,13 +5,20 @@ import {
   ensureCoachingSettingsTable,
   getCoachingSettings,
 } from "@/lib/coaching-settings";
+import { requireAdmin } from "@/lib/admin-guard";
 
 export async function GET() {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   const settings = await getCoachingSettings();
   return NextResponse.json(settings);
 }
 
 export async function PUT(req: Request) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   const body: Record<string, string> = await req.json();
   await ensureCoachingSettingsTable();
 

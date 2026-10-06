@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { ensureCoachingTable } from "@/lib/ensure-tables";
+import { requireAdmin } from "@/lib/admin-guard";
 
 const BOOK_TYPES = ["paper", "ebook"];
 const CATEGORIES = ["group", "individual"];
 const STATUSES = ["pending", "deposit_confirmed", "in_progress", "completed", "refunded"];
 
 export async function POST(req: Request) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   await ensureCoachingTable();
   const {
     member_id, book_type, category, product_name, amount,

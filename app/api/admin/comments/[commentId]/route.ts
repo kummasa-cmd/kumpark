@@ -2,11 +2,15 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import pool from "@/lib/db";
 import { verifyAdminToken, COOKIE_NAME } from "@/lib/auth";
+import { requireAdmin } from "@/lib/admin-guard";
 
 export async function PUT(
   req: Request,
   { params }: { params: { commentId: string } }
 ) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   const token = cookies().get(COOKIE_NAME)?.value;
   const payload = token ? await verifyAdminToken(token) : null;
   if (!payload) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -41,6 +45,9 @@ export async function DELETE(
   _req: Request,
   { params }: { params: { commentId: string } }
 ) {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+
   const token = cookies().get(COOKIE_NAME)?.value;
   const payload = token ? await verifyAdminToken(token) : null;
   if (!payload) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
